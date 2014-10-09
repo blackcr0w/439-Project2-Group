@@ -204,6 +204,40 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
                           bool writable);
 
+char*
+first_file_name(char* cmd)
+{
+  char *token, *save_ptr; // for spliter
+
+ // char *file_cpy = cmd;  // copying cmdline
+
+  //char * real;
+
+  char s[strlen(cmd)]; //setting up s
+
+  strlcpy (s, cmd, strlen(cmd)+1);  //putting cmdline in s
+
+  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
+        token = strtok_r (NULL, " ", &save_ptr))
+  {
+    return token;
+  }
+/*char * real[100] = {NULL};
+
+    int i;
+    for(i = 0; i <= strlen(cmd); i++)
+    {
+      if(!strcmp(cmd[i], " "))
+      {
+
+        real[i] = cmd[i];
+      }
+
+    }
+
+    return real;*/
+}
+
 
 /* Loads an ELF executable from FILE_NAME into the current thread.
    Stores the executable's entry point into *EIP
@@ -225,11 +259,31 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   process_activate ();
 
+  char *token, *save_ptr; // for spliter
+
+  char * real;
+
+  char s[100]; //setting up s
+
+  strlcpy (s, file_name, strlen(file_name)+1);  //putting cmdline in s
+
+  char * real_file_name;
+
+  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
+        token = strtok_r (NULL, " ", &save_ptr))
+  {
+    real_file_name = token;
+    break;
+  }
+  printf ("JUST FILE NAME: %s: \n", real_file_name);
+
+  //char *real_file_name = first_file_name(file_name);
+
   /* Open executable file. */
-  file = filesys_open (file_name);
+  file = filesys_open (real_file_name); //fix
   if (file == NULL) 
     {
-      printf ("load: %s: open failed\n", file_name);
+      printf ("load: %s: open failed\n", real_file_name);
       goto done; 
     }
 
@@ -309,14 +363,21 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if (!setup_stack (esp, file_name))
     goto done;
 
+  
+
+
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
+
 
   success = true;
 
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
+
+  //ASSERT(false);
+
   return success;
 }
 
@@ -447,78 +508,89 @@ setup_stack (void **esp, char *file_name)
     }
 
   // our code starts
+  char* myEsp = (char*) *esp;
+
+  char* n_word = NULL;
+
   char *file_cpy = file_name;  // copying cmdline
 
   char *token, *save_ptr; // for spliter
 
   char s[strlen(file_cpy)];
 
-  strlcpy(s, file_cpy, sizeof(file_cpy));  //moves cmdline copy into s
+  strlcpy(s, file_cpy, strlen(file_cpy)+1);  //moves cmdline copy into s, add 1 for null
 
   int count = -1;  //tracking number of arguments
 
   char *args[100] = {NULL};
+  char *whereArgs[100] = {NULL};
 
   for (token = strtok_r (s, " ", &save_ptr); token != NULL;
         token = strtok_r (NULL, " ", &save_ptr))
   {
     count++; // how many arguments
-    args[count] = token; // token    
-    
+    args[count] = token; // token  
   }
+
   int count_save = count;
   while(count >= 0)  // while still has args
-  {
- 
-    int i;
-    
-   for(i = 0; args[count][i] != NULL; i++)  // loops through argument characters
-    {
- 
-      *--esp = args[count][i]; // store the character on stack and decrement stack
-    }
-    
-    *--esp = NULL;  // store nullterminate on stack and decrement stack
-  
-    count--;  // go to next argument
-  }
-
-  // word align
-
-  char* myEsp = (char*) *esp;
-
- /* int align = myEsp % 4;  //double pointer???
-  while(align != 0)
-  {
-    char word = NULL;  //what to put here
-    *--esp = word;
-    align--;
-  }*/
-
-  *--esp = NULL;  //push 0
-
-   count = count_save;
-   while(count >= 0)  // while still has args
   { 
+    int i;
+
+    myEsp--;
+    *myEsp = NULL;  // store end nullcharacter on stack and decrement stack
+
+    for(i = strlen(args[count]+1); i>=0; i--)  // loops through argument characters
+    {
+      myEsp--;
+      *myEsp = args[count][i]; // store the character on stack and decrement stack
+    }
+
+    whereArgs[count] = myEsp;
+
+    count--;  // go to next argument
+  }
+
+  int align = (int) myEsp % 4;
+  align += 4;
+ 
+  while(align != 0)  //while not word aligned
+  {
+    char word = NULL;
+    myEsp--;
+    *myEsp = word;
+    align--;
+  }
+
+  int n = NULL;
+  myEsp-= 4;
+  *myEsp = n;  //push 0
+  //printf("myEsp2 %p \n", myEsp);
+
+  count = count_save;
+  while(count >= 0)  // while still has args
+  {     
+    myEsp -= sizeof(char *);
     
-    esp -= 4;
-    *esp = args[count];  // pointer to argument
+    *((char **)myEsp) = whereArgs[count];  // pointer to argument
   
     count--;  // go to next argument
   }
 
-  char *start = args[0];
+  char *start = myEsp;
 
-  esp -= 4;
-  *esp = start;  // double pointer to start of arguments
+  myEsp -= 4;
+  *(char **)myEsp = start;
 
-  esp -= 4; //adds number of arguments to stack
-  *esp = count_save + 1;
+  myEsp -= 4; //adds number of arguments to stack
+  *myEsp = count_save + 1;
 
   void * ret; //arbitrary return value
 
-  esp -= 4;
-  *esp = ret;  //final return adress
+  myEsp -= 4;
+  *myEsp = ret;  //final return adress
+
+  *esp = myEsp;
 
   hex_dump(*esp, *esp, PHYS_BASE-*esp,1);
 
