@@ -1,7 +1,4 @@
 439-Project2-Group
 ==================
 
-Project shit goes here
-
-
-some read me stuff to pull
+Project 2 with Pintos for CS439
