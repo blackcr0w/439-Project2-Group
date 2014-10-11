@@ -19,6 +19,7 @@
 #include "threads/vaddr.h"
 
 static thread_func start_process NO_RETURN;
+static char * get_cmd_line(char * esp UNUSED);
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
 /* Starts a new thread running a user program loaded from
@@ -134,7 +135,7 @@ process_activate (void)
      interrupts. */
   tss_update ();
 }
-
+
 /* We load ELF binaries.  The following definitions are taken
    from the ELF specification, [ELF1], more-or-less verbatim.  */
 
@@ -204,39 +205,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
                           bool writable);
 
-char*
-first_file_name(char* cmd)
-{
-  char *token, *save_ptr; // for spliter
 
- // char *file_cpy = cmd;  // copying cmdline
-
-  //char * real;
-
-  char s[strlen(cmd)]; //setting up s
-
-  strlcpy (s, cmd, strlen(cmd)+1);  //putting cmdline in s
-
-  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
-        token = strtok_r (NULL, " ", &save_ptr))
-  {
-    return token;
-  }
-/*char * real[100] = {NULL};
-
-    int i;
-    for(i = 0; i <= strlen(cmd); i++)
-    {
-      if(!strcmp(cmd[i], " "))
-      {
-
-        real[i] = cmd[i];
-      }
-
-    }
-
-    return real;*/
-}
 
 
 /* Loads an ELF executable from FILE_NAME into the current thread.
@@ -380,7 +349,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   return success;
 }
-
+
 /* load() helpers. */
 
 static bool install_page (void *upage, void *kpage, bool writable);
