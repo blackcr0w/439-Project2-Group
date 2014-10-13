@@ -109,6 +109,11 @@ struct thread
     struct semaphore *semWait; //for timer.c sleep
     struct semaphore *sema_block; //for blocking parent 
 
+
+
+    int waiting;
+
+
     struct condition *conWait;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

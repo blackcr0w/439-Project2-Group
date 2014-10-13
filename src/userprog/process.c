@@ -53,6 +53,12 @@ process_execute (const char *file_name)
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
+
+
+  // populate the children of the thread
+  list_push_front (&thread_current()->children, child_elem);
+
+
   return tid;
 }
 
@@ -97,22 +103,23 @@ start_process (void *file_name_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) 
+process_wait (tid_t child_tid) 
 {
-  while(1)  //infinite loop
+/*  while(1)  //infinite loop
   {
-  } return -1;
+  } return -1;*/
+
 
   struct thread *current =  thread_current();
   int flag = 0;   // flag representing if the child has been found
-  int tid;        // current child's tid
 
   // change status of current thread to blocked
-  current -> status = THREAD_BLOCKED;
+  current -> waiting = 1;
 
   // if pid is still alive. If one of the current thread's children's tids is equal to the 
   // child_tid then it is alive. Loop through current thread's children.
   struct list children = current -> children;
+    printf("%d\n\n\n\n\n\n\n\n\n", list_size(&children));
   struct list_elem *current_child;
 
   // loop through the children of currently running thread
@@ -120,9 +127,10 @@ process_wait (tid_t child_tid UNUSED)
             current_child = list_next (current_child))
   {
     struct thread *t = list_entry (current_child, struct thread, child_elem);
-    tid = t -> tid;
-    if(tid == child_tid)
+    tid_t tid = t -> tid;
+    if(t -> tid == child_tid)
     {
+printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
       flag = 1;
 
       // may need to call exit. return exit status
@@ -130,14 +138,13 @@ process_wait (tid_t child_tid UNUSED)
         return 0;
 
       // cannot call wait twice
-      else if(t->status == THREAD_BLOCKED)
+      else if(t->waiting == 1)
         return -1;
 
       // update the status
-      t->status = THREAD_BLOCKED;
+      t->waiting = 1;
     }
   }
-
   // child_tid not a direct child
   if(flag == 0)
     return -1;
@@ -149,7 +156,7 @@ process_wait (tid_t child_tid UNUSED)
     sema_down(current);  // block parent so that child may finish
 
     // change status of current thread to ready
-    current -> status = THREAD_READY;
+    current -> waiting = 0;
 
     // return exit status of 0 (successful)
     return 0;
