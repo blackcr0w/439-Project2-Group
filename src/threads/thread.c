@@ -167,7 +167,7 @@ thread_print_stats (void)
 bool
 prioritycmp (const struct list_elem *a,
         const struct list_elem *b,
-        void *aux)
+        void *aux UNUSED)
 {
     // return true if a is of lower priority than b
     // return false otherwise

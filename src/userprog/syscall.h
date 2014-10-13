@@ -10,7 +10,6 @@ typedef int pid_t;
 void syscall_init (void);
 void halt (void);
 void exit (int status);
-//int exec_s (const char *cmd_line, uint32_t *eax);
 int wait (pid_t pid);
 bool create (const char *file, unsigned initial_size);
 bool remove (const char *file);

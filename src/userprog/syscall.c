@@ -9,14 +9,16 @@
 #include "process.h"
 
 static void syscall_handler (struct intr_frame *);
-int exec_s (const char *cmd_line, uint32_t *eax);
+int exec (const char *cmd_line, uint32_t *eax);
 // struct semaphore * sema_exec;  // binary semaphore to control access to exec function
+struct semaphore * sema_pwait;
 
 void
 syscall_init (void) 
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   // sema_init(sema_exec, 1);
+  sema_init(sema_pwait, 1);
 }
 
 static void
@@ -26,9 +28,8 @@ syscall_handler (struct intr_frame *f)
   thread_exit ();
 
   // get the system call
-	int * esp = f->esp;
+	/*int * esp = f->esp;
   int sys_num = *esp;
-
 
   // get pointer to eax
   uint32_t * eax = &(f->eax);
@@ -41,7 +42,7 @@ syscall_handler (struct intr_frame *f)
 	{ 
 		case SYS_WAIT:      // wait();
 			break;
-    case SYS_EXEC:      exec_s(cmd_line, eax);
+    case SYS_EXEC:      exec(cmd_line, eax);
       break;
     case SYS_HALT:      halt();
       break;
@@ -65,11 +66,11 @@ syscall_handler (struct intr_frame *f)
       break;
     case SYS_CLOSE:
       break;
-		default:
+		default: 
 			printf("uh oh");
 			break;
 		// ...
-	}
+	}*/
 	
 }
 
@@ -135,9 +136,9 @@ exit (int status UNUSED)
 
 // execute the given command line
 int 
-exec_s (const char *cmd_line, uint32_t *eax)
+exec (const char *cmd_line UNUSED, uint32_t *eax UNUSED)
 {
-return 0;
+  return 0;
 /*  // synchronization, only one can use at a time
   sema_down(sema_exec);
 
@@ -164,6 +165,11 @@ int
 wait (pid_t pid UNUSED)
 {
   return 0;
+ /* sema_down(sema_pwait);                // block any duplicate waits
+  int return_val = process_wait (pid);  // call process_wait
+  sema_up(sema_pwait);                  // finished waiting
+
+  return return_val;                    // finished waiting*/
 }
 
 /*bool 

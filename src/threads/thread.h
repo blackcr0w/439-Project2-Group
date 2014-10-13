@@ -91,6 +91,8 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
+    struct list children;
+    struct list_elem child_elem;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
@@ -104,7 +106,8 @@ struct thread
     struct list locksAq;		//list of aquired locks that the thread has
     struct lock *lockWait;		//lock potentially waiting on
 
-    struct semaphore *semWait;
+    struct semaphore *semWait; //for timer.c sleep
+    struct semaphore *sema_block; //for blocking parent 
 
     struct condition *conWait;
 #ifdef USERPROG

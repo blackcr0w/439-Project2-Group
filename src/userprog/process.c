@@ -32,6 +32,16 @@ process_execute (const char *file_name)
   char *fn_copy;
   tid_t tid;
 
+  /* sema up when done executing!!!!!!!!!!!!!!!!!!!!! */
+
+
+
+  // initialize the thread's blocked semaphore
+  // sema_init ((thread_current() -> sema_block), 0);
+
+  // change status of thread to running
+  // thread_current() -> status = THREAD_RUNNING;
+
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
@@ -91,7 +101,66 @@ process_wait (tid_t child_tid UNUSED)
 {
   while(1)  //infinite loop
   {
+  } return -1;
+
+  struct thread *current =  thread_current();
+  int flag = 0;   // flag representing if the child has been found
+  int tid;        // current child's tid
+
+  // change status of current thread to blocked
+  current -> status = THREAD_BLOCKED;
+
+  // if pid is still alive. If one of the current thread's children's tids is equal to the 
+  // child_tid then it is alive. Loop through current thread's children.
+  struct list children = current -> children;
+  struct list_elem *current_child;
+
+  // loop through the children of currently running thread
+  for (current_child = list_begin (&children); current_child != list_end (&children);
+            current_child = list_next (current_child))
+  {
+    struct thread *t = list_entry (current_child, struct thread, child_elem);
+    tid = t -> tid;
+    if(tid == child_tid)
+    {
+      flag = 1;
+
+      // may need to call exit. return exit status
+      if(t->status == THREAD_DYING)
+        return 0;
+
+      // cannot call wait twice
+      else if(t->status == THREAD_BLOCKED)
+        return -1;
+
+      // update the status
+      t->status = THREAD_BLOCKED;
+    }
   }
+
+  // child_tid not a direct child
+  if(flag == 0)
+    return -1;
+
+  // child_tid is a direct child
+  else
+  {
+    // its alive!!
+    sema_down(current);  // block parent so that child may finish
+
+    // change status of current thread to ready
+    current -> status = THREAD_READY;
+
+    // return exit status of 0 (successful)
+    return 0;
+  }
+
+
+
+  // while(1)  //infinite loop
+  // {
+  // }
+
   return -1;
 }
 
