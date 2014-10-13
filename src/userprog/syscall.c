@@ -10,7 +10,7 @@
 
 static void syscall_handler (struct intr_frame *);
 int exec (const char *cmd_line, uint32_t *eax);
-// struct semaphore * sema_exec;  // binary semaphore to control access to exec function
+struct semaphore * sema_exec;  // binary semaphore to control access to exec function
 struct semaphore * sema_pwait;
 
 void
@@ -18,7 +18,7 @@ syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   // sema_init(sema_exec, 1);
-  sema_init(sema_pwait, 1);
+  // sema_init(sema_pwait, 1);
 }
 
 static void
@@ -28,7 +28,7 @@ syscall_handler (struct intr_frame *f)
   thread_exit ();
 
   // get the system call
-	/*int * esp = f->esp;
+	int * esp = f->esp;
   int sys_num = *esp;
 
   // get pointer to eax
@@ -70,7 +70,7 @@ syscall_handler (struct intr_frame *f)
 			printf("uh oh");
 			break;
 		// ...
-	}*/
+	}
 	
 }
 
