@@ -55,10 +55,13 @@ process_execute (const char *file_name)
     palloc_free_page (fn_copy); 
 
 
-  // populate the children of the thread
-  list_push_front (&thread_current()->children, child_elem);
-
-
+  struct thread *child = get_thread_tid(tid);
+  if(!child == NULL)
+  {
+    child->parent = thread_current();
+     // populate the children of the thread
+    list_push_front (&thread_current()->children, &child->child_elem);
+  }
   return tid;
 }
 
@@ -105,22 +108,16 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid) 
 {
-/*  while(1)  //infinite loop
+ /* while(1)  //infinite loop
   {
   } return -1;*/
 
-
   struct thread *current =  thread_current();
-  int flag = 0;   // flag representing if the child has been found
+  int child_there = 0;   // flag representing if the child has been found
 
-  // change status of current thread to blocked
-  current -> waiting = 1;
-
-  // if pid is still alive. If one of the current thread's children's tids is equal to the 
-  // child_tid then it is alive. Loop through current thread's children.
   struct list children = current -> children;
-    printf("%d\n\n\n\n\n\n\n\n\n", list_size(&children));
-  struct list_elem *current_child;
+   
+  struct list_elem *current_child;  // list elem for loop
 
   // loop through the children of currently running thread
   for (current_child = list_begin (&children); current_child != list_end (&children);
@@ -128,47 +125,27 @@ process_wait (tid_t child_tid)
   {
     struct thread *t = list_entry (current_child, struct thread, child_elem);
     tid_t tid = t -> tid;
-    if(t -> tid == child_tid)
+
+    if(t -> tid == child_tid) // if found direct child
     {
-printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-      flag = 1;
+      child_there = 1;
 
-      // may need to call exit. return exit status
-      if(t->status == THREAD_DYING)
-        return 0;
+      list_remove(&t->child_elem);
 
-      // cannot call wait twice
-      else if(t->waiting == 1)
-        return -1;
-
-      // update the status
-      t->waiting = 1;
+      return current->exit_status;
     }
   }
-  // child_tid not a direct child
-  if(flag == 0)
+  // child_tid not a direct child or child already been waited on before
+  if(child_there == 0)
     return -1;
 
   // child_tid is a direct child
   else
   {
-    // its alive!!
-    sema_down(current);  // block parent so that child may finish
+    sema_down(&current->sema_parent_block);  // block parent so that child may finish
 
-    // change status of current thread to ready
-    current -> waiting = 0;
-
-    // return exit status of 0 (successful)
-    return 0;
+    return current->exit_status;  //parent exit status value
   }
-
-
-
-  // while(1)  //infinite loop
-  // {
-  // }
-
-  return -1;
 }
 
 /* Free the current process's resources. */
@@ -177,6 +154,21 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+
+    struct list_elem *set_null;
+
+    //setting all parents to NULL
+    for (set_null = list_begin (&cur->children); set_null != list_end (&cur->children);
+            set_null = list_next (set_null))
+    {
+      struct thread *child = list_entry (set_null, struct thread, child_elem);
+      child->parent = NULL;
+    }
+
+    if(cur->parent != NULL)
+    {
+      sema_up(&cur-> parent -> sema_parent_block);
+    }
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */

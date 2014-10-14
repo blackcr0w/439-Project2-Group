@@ -12,6 +12,7 @@ static void syscall_handler (struct intr_frame *);
 int exec (const char *cmd_line, uint32_t *eax);
 struct semaphore * sema_exec;  // binary semaphore to control access to exec function
 struct semaphore * sema_pwait;
+struct semaphore * sema_write;
 
 void
 syscall_init (void) 
@@ -19,6 +20,7 @@ syscall_init (void)
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   sema_init(&sema_exec, 1);
   sema_init(&sema_pwait, 1);
+  sema_init(&sema_write, 1);
 }
 
 static void
@@ -28,7 +30,7 @@ syscall_handler (struct intr_frame *f)
   thread_exit ();
 
   // get the system call
-	/*int * esp = f->esp;
+	int * esp = f->esp;
   int sys_num = *esp;
 
   // get pointer to eax
@@ -70,7 +72,7 @@ syscall_handler (struct intr_frame *f)
 			printf("uh oh");
 			break;
 		// ...
-	}*/
+	}
 	
 }
 
@@ -128,11 +130,13 @@ halt (void)
   shutdown_power_off();
 }
 
-/*void 
-exit (int status UNUSED)
+void 
+exit (int status)
 {
+  struct thread *cur = thread_current();
 
-}*/
+  cur->parent->exit_status = status;
+}
 
 // execute the given command line
 int 
@@ -162,7 +166,7 @@ exec (const char *cmd_line UNUSED, uint32_t *eax UNUSED)
 }
 
 int 
-wait (pid_t pid UNUSED)
+wait (pid_t pid)
 {
   // return 0;
   sema_down(&sema_pwait);                // block any duplicate waits
@@ -204,9 +208,57 @@ read (int fd, void *buffer UNUSED, unsigned size UNUSED)
 }*/
 
 int 
-write (int fd UNUSED, const void *buffer UNUSED, unsigned size UNUSED)
+write (int fd, const void *buffer, unsigned size)
 {
-  return 0;
+  // prevent processes from writing mixed up
+  sema_down(&sema_write);
+
+  // write to console
+  if(fd==1)
+  {
+    // get it byte by byte
+    char * char_buffer = (char *) buffer;
+
+    // if there is nothing to write
+    if(size==0 || buffer==NULL || *buffer==NULL)
+      return 0;
+
+    // if its small enough to write all at once
+    if(size<=200)
+    {
+      putbuf(buffer, size);
+      return size;
+    }
+
+    // break into chunks of 200 to write
+    // SEMAPHORE THIS!
+    int i;
+    for(i = 0; i<=size-200; i+=200)
+    {
+      putbuf(my_buffer, 200);
+      shift_buf(my_buffer, 200);  // shift right 200
+    }
+
+    // fence post
+    putbuf(my_buffer, size%200);
+
+  } // end of fd==1
+
+  // something about input
+  else
+  {
+    printf("what are your doing?\ntry reading...");
+  }
+  // let others write now
+  sema_up(&sema_write);
+
+  return size;
+}
+
+char *
+shift_buf(char * buffer, int shift)
+{
+  return &( (*buffer)[shift] );
 }
 
 void 

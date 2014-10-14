@@ -101,6 +101,28 @@ thread_init (void)
     initial_thread->tid = allocate_tid ();
 }
 
+struct thread *
+get_thread_tid (tid_t tid)
+{
+  struct thread *current =  thread_current(); 
+
+  struct list_elem *thread_elem;
+
+  // loop through the children of currently running thread
+  for (thread_elem = list_begin (&all_list); thread_elem != list_end (&all_list);
+            thread_elem = list_next (thread_elem))
+  {
+    struct thread *t = list_entry (thread_elem, struct thread, allelem);
+   
+    if(tid == t->tid)
+    {
+      return t;
+    }   
+  }
+
+  return NULL;
+} 
+
 /* Starts preemptive thread scheduling by enabling interrupts.
    Also creates the idle thread. */
 void
@@ -493,7 +515,6 @@ is_thread (struct thread *t)
 /* Does basic initialization of T as a blocked thread named
    NAME. */
 
-//David driving here
 static void
 init_thread (struct thread *t, const char *name, int priority)
 {
@@ -512,10 +533,16 @@ init_thread (struct thread *t, const char *name, int priority)
     list_push_back (&all_list, &t->allelem);
 
     // thread starts not waiting
-    t -> waiting = 0;
 
-    // intitialize children list of thrad
+    t -> parent = NULL;
+    t -> exit_status = -1;
+
+    // intitialize children list of thread
+
     list_init(&(t -> children));
+
+
+    sema_init(&t->sema_parent_block, 0);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

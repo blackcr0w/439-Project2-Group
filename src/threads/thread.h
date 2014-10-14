@@ -91,29 +91,30 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
-    struct list children;
-    struct list_elem child_elem;
+ 
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
     struct list_elem thread_elem;	/*element to sort thread in sleep list*/
-
     struct semaphore threadBlock;	/*semaphore for sleeping threads in sleeplist*/
-
     int original_priority;		
-
     struct list locksAq;		//list of aquired locks that the thread has
     struct lock *lockWait;		//lock potentially waiting on
-
-    struct semaphore *semWait; //for timer.c sleep
-    struct semaphore *sema_block; //for blocking parent 
+    struct semaphore *semWait; //for timer.c sleep    
 
 
 
-    int waiting;
+    /*      Project 2 elements         */
+    struct list children;         //list of children
+    struct list_elem child_elem;   //list elem for child threads
+    struct semaphore *sema_parent_block;  //for blocking parent 
 
+    struct thread *parent;
 
+    int exit_status;
+
+/*      End of Project 2 elements         */
     struct condition *conWait;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
