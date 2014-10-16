@@ -347,6 +347,7 @@ thread_exit (void)
     thread_current ()->status = THREAD_DYING;
     schedule ();
     NOT_REACHED ();
+    //exit message
 }
 
 /* Yields the CPU.  The current thread is not put to sleep and
@@ -536,6 +537,7 @@ init_thread (struct thread *t, const char *name, int priority)
 
     t -> parent = NULL;
     t -> exit_status = -1;
+    t -> alive = 1;
 
     // intitialize children list of thread
 

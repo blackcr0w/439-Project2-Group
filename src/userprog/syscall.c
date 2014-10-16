@@ -7,12 +7,15 @@
 #include "devices/shutdown.h"
 #include "threads/synch.h"
 #include "process.h"
+#include "threads/vaddr.h"
 
 static void syscall_handler (struct intr_frame *);
-int exec (const char *cmd_line, uint32_t *eax);
+int exec (const char *cmd_line);
 struct semaphore * sema_exec;  // binary semaphore to control access to exec function
 struct semaphore * sema_pwait;
 struct semaphore * sema_write;
+int *file_pointers[100] = {NULL};
+int fd_index = 2;
 
 void
 syscall_init (void) 
@@ -27,42 +30,132 @@ static void
 syscall_handler (struct intr_frame *f) 
 {
   printf ("system call!\n");
-  thread_exit ();
+  thread_exit();
+  //hex_dump(f->esp, f->esp, 1000,1);
 
   // get the system call
-	int * esp = f->esp;
+  int * esp = f->esp;
+
+ // printf("The syscall is %s", *(esp+2));
+  
+ int fd;
+ int pid;
+ char * cmd_line;
+ int status;
+ char * file;
+ char * buf;
+ unsigned int size;
+ unsigned int initial_size;
+
+  if(is_kernel_vaddr(*esp))  //if the pointer is in kernal exit right away
+  {
+    thread_exit();
+  }
+  //check for other null pointers or unmapped things
   int sys_num = *esp;
 
   // get pointer to eax
-  uint32_t * eax = &(f->eax);
+  uint32_t * eax = f->eax;
 
   // get the file name and args
-  char * cmd_line = get_cmd_line((char *) f->esp);
+ // char * cmd_line = get_cmd_line((char *) f->esp);
+  printf("the write call is %d\n", sys_num);
+//thread_exit ();
+
 
 	// redirect to the correct function handler
 	switch(sys_num)
 	{ 
-		case SYS_WAIT:      // wait();
+		case SYS_WAIT:    
+
+      pid = *(esp+1); //gets first argument that is pid
+      eax = wait (pid);
 			break;
-    case SYS_EXEC:      exec(cmd_line, eax);
+
+    case SYS_EXEC:  
+
+      printf("\n\n\n\n\n\n\n\n");
+      cmd_line = *(esp+1); // gets first argument
+      exec(cmd_line);
       break;
-    case SYS_HALT:      halt();
+
+    case SYS_HALT:     
+
+      halt();
       break;
-    case SYS_EXIT:
+
+    case SYS_EXIT:    
+
+      status = *(esp+1); // gets first argument
+      exit(status);
       break;
-    case SYS_CREATE:
+
+    case SYS_CREATE:   // create();
+
+      file = *(esp+1);
+      initial_size = *(esp+2);
+      printf("file name is: %s\n initial size is: %d\n", file, initial_size);
+
+      if(create(file, initial_size))
+      {
+        eax = 1;
+        
+      }
+        
+      else
+      {
+        ASSERT(0);
+        eax = 0;
+      }
+        
+
+     // eax = create(file, initial_size);  //boolean value
       break;
-    case SYS_REMOVE:
+
+    case SYS_REMOVE:    
+
+      file = *(esp+1);
+      //eax = remove(file);               //boolean value
       break;
-    case SYS_OPEN:
+
+    case SYS_OPEN:     
+
+      file = *(esp+1);
+
+     // eax = open(file);       //boolean value
       break;
-    case SYS_FILESIZE:
+
+    case SYS_FILESIZE:  
+
+      fd = *(esp+1);
+      filesize(fd);
       break;
-    case SYS_READ:
+
+    case SYS_READ:   
+
+   //   fd = *(esp+1);
+  //    buf = *(esp+2);
+  //    unsigned size = *(esp+3); 
+  //    eax = read(fd, buf, size);
       break;
-    case SYS_WRITE:
+
+    case SYS_WRITE:   
+
+      fd = *(esp+1);
+      buf = *(esp+2);
+      size = *(esp+3); 
+
+    // printf("FD should be 1: %d", fd); // write();
+    //  printf("Buffer is: %s", buf); // write();
+    //  printf("size is: %d", size); // write();
+
+      eax = write(fd, buf, size);
+
+    //  thread_exit ();
       break;
     case SYS_SEEK:
+
+
       break;
     case SYS_TELL:
       break;
@@ -78,7 +171,7 @@ syscall_handler (struct intr_frame *f)
 
 // gets the associated cmd_line from the fram
 // look into the esp stack to get name plus args in correct order
-char * get_cmd_line(char * esp UNUSED)
+/*char * get_cmd_line(char * esp UNUSED)
 {
   // save esp to revert later
   char * save_esp = esp;
@@ -121,7 +214,7 @@ char * get_cmd_line(char * esp UNUSED)
   esp = save_esp;
 
   return cmd_line;
-}
+}*/
 
 
 void 
@@ -140,7 +233,7 @@ exit (int status)
 
 // execute the given command line
 int 
-exec (const char *cmd_line UNUSED, uint32_t *eax UNUSED)
+exec (const char *cmd_line)
 {
   return 0;
 /*  // synchronization, only one can use at a time
@@ -168,7 +261,6 @@ exec (const char *cmd_line UNUSED, uint32_t *eax UNUSED)
 int 
 wait (pid_t pid)
 {
-  // return 0;
   sema_down(&sema_pwait);                // block any duplicate waits
   int return_val = process_wait (pid);  // call process_wait
   sema_up(&sema_pwait);                  // finished waiting
@@ -176,102 +268,120 @@ wait (pid_t pid)
   return return_val;                    // finished waiting
 }
 
-/*bool 
-create (const char *file UNUSED, unsigned initial_size UNUSED)
+bool 
+create (const char *file, unsigned initial_size)
 {
+  //char file
+  //printf("file name is: %s\n initial size is: %d", initial_size);
+  return filesys_create(file, initial_size);
+}
 
-}*/
-
-/*bool 
-remove (const char *file UNUSED)
+bool 
+remove (const char *file)
 {
-
-}*/
-
-int 
-open (const char *file UNUSED)
-{
-
-  return 0;
+  return filesys_remove(file);
 }
 
 int 
-filesize (int fd UNUSED)
+open (const char *file)
+{
+
+    file_pointers[fd_index] = filesys_open(file);
+    if(file_pointers[fd_index] == NULL)
+    {
+      return -1;
+    }
+    else
+    {
+      return fd_index++;
+    }
+    
+}
+
+int 
+filesize (int fd)
 {
   return 0;
 }
 
 /*int 
-read (int fd, void *buffer UNUSED, unsigned size UNUSED)
+read (int fd, void *buffer, unsigned size)
 {
-
+  if(fd ==0) //read from keyboard 
+  {
+    input_getc();
+  }
 }*/
 
 int 
 write (int fd, const void *buffer, unsigned size)
 {
-  // prevent processes from writing mixed up
+ // printf("We got to write!");
+
+ // prevent processes from writing mixed up
   sema_down(&sema_write);
 
-  // write to console
+  unsigned size_cpy = size;
+//ASSERT(false);
+  //write to console
   if(fd==1)
   {
-    // get it byte by byte
-    char * char_buffer = (char *) buffer;
-
     // if there is nothing to write
-    if(size==0 || buffer==NULL || *buffer==NULL)
+    if(size == 0 || buffer == NULL)
+    {
+      sema_up(&sema_write);
       return 0;
+    }    
 
-    // if its small enough to write all at once
     if(size<=200)
     {
       putbuf(buffer, size);
+
+      sema_up(&sema_write);
       return size;
     }
 
-    // break into chunks of 200 to write
-    // SEMAPHORE THIS!
     int i;
-    for(i = 0; i<=size-200; i+=200)
+    for(i = 0; i<size; i+=200)
     {
-      putbuf(my_buffer, 200);
-      shift_buf(my_buffer, 200);  // shift right 200
+      if(size_cpy <= 200)
+      {
+        putbuf(buffer + i, size_cpy);
+      }
+
+      putbuf(buffer + i, 200);
+
+      size_cpy = size_cpy - 200;
+     
     }
 
-    // fence post
-    putbuf(my_buffer, size%200);
-
-  } // end of fd==1
-
-  // something about input
-  else
-  {
-    printf("what are your doing?\ntry reading...");
   }
+  if(fd != 0 || fd != 1)
+  {
+    //writing to file
+    sema_up(&sema_write);
+    return file_write (file_pointers[fd], buffer, size);
+
+  }
+
   // let others write now
   sema_up(&sema_write);
 
   return size;
 }
 
-char *
-shift_buf(char * buffer, int shift)
-{
-  return &( (*buffer)[shift] );
-}
 
-void 
-seek (int fd UNUSED, unsigned position UNUSED)
+/*void 
+seek (int fd , unsigned position)
 {
   
-}
+}*/
 
-unsigned 
+/*unsigned 
 tell (int fd UNUSED)
 {
   return 0;
-}
+}*/
 
 /*void 
 close (int fd UNUSED)

@@ -51,6 +51,8 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+
+ // printf("\n\n\n\n\nTHE TID REALLY IS THIS:  %d \n\n\n\n\n", tid);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
 
@@ -70,6 +72,7 @@ process_execute (const char *file_name)
 static void
 start_process (void *file_name_)
 {
+
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
@@ -84,7 +87,10 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) 
+  {
     thread_exit ();
+  }
+    
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -108,44 +114,47 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid) 
 {
- /* while(1)  //infinite loop
+  //printf("\n\n\n\nPROBLEM\n\n\n\n");
+  /*while(1)  //infinite loop
   {
-  } return -1;*/
+  } */
+
+
+ // printf("\n\n\n\n\nCHILD TID IS: %d \n\n\n\n\n", child_tid);
 
   struct thread *current =  thread_current();
-  int child_there = 0;   // flag representing if the child has been found
-
+ 
   struct list children = current -> children;
    
   struct list_elem *current_child;  // list elem for loop
+
+ // printf("\n\n\n\n\nGOT HERE\n\n\n\n\n");
 
   // loop through the children of currently running thread
   for (current_child = list_begin (&children); current_child != list_end (&children);
             current_child = list_next (current_child))
   {
+
     struct thread *t = list_entry (current_child, struct thread, child_elem);
     tid_t tid = t -> tid;
+  //  printf("\n\n\n\n\nGOT HERE TID %d \n\n\n\n\n", tid);
 
     if(t -> tid == child_tid) // if found direct child
     {
-      child_there = 1;
+      //thread_exit();
 
       list_remove(&t->child_elem);
 
-      return current->exit_status;
+      if(t->alive == 1)  //if child is alive wait until it finishes and return it
+        sema_down(&current->sema_parent_block);  // block parent so that child may finish
+
+        return current->exit_status;
     }
   }
+
   // child_tid not a direct child or child already been waited on before
-  if(child_there == 0)
     return -1;
 
-  // child_tid is a direct child
-  else
-  {
-    sema_down(&current->sema_parent_block);  // block parent so that child may finish
-
-    return current->exit_status;  //parent exit status value
-  }
 }
 
 /* Free the current process's resources. */
@@ -154,6 +163,8 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+
+    cur->alive = 0;
 
     struct list_elem *set_null;
 
@@ -274,8 +285,6 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           bool writable);
 
 
-
-
 /* Loads an ELF executable from FILE_NAME into the current thread.
    Stores the executable's entry point into *EIP
    and its initial stack pointer into *ESP.
@@ -312,9 +321,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
     real_file_name = token;
     break;
   }
-  printf ("JUST FILE NAME: %s: \n", real_file_name);
-
-  //char *real_file_name = first_file_name(file_name);
 
   /* Open executable file. */
   file = filesys_open (real_file_name); //fix

@@ -114,6 +114,8 @@ struct thread
 
     int exit_status;
 
+    int alive;
+
 /*      End of Project 2 elements         */
     struct condition *conWait;
 #ifdef USERPROG

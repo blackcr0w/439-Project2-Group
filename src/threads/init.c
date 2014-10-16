@@ -132,8 +132,13 @@ main (void)
   /* Run actions specified on kernel command line. */
   run_actions (argv);
 
+ printf ("\n\n\n\nFINISH UP HERE BEFORE\n\n\n\n"); //REMOVE
+
   /* Finish up. */
   shutdown ();
+
+ printf ("\n\n\n\nFINISH UP HERE AFTER\n\n\n\n"); //REMOVE
+
   thread_exit ();
 }
 
