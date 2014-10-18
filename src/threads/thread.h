@@ -96,19 +96,28 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
-    struct list_elem thread_elem;	/*element to sort thread in sleep list*/
-    struct semaphore threadBlock;	/*semaphore for sleeping threads in sleeplist*/
-    int original_priority;		
-    struct list locksAq;		//list of aquired locks that the thread has
-    struct lock *lockWait;		//lock potentially waiting on
+    struct list_elem thread_elem; /*element to sort thread in sleep list*/
+    struct semaphore threadBlock; /*semaphore for sleeping threads in sleeplist*/
+    int original_priority;    
+    struct list locksAq;    //list of aquired locks that the thread has
+    struct lock *lockWait;    //lock potentially waiting on
     struct semaphore *semWait; //for timer.c sleep    
-
-
+    
 
     /*      Project 2 elements         */
+    char * proc_name;
+
+    int *file_pointers[130];
+    int fd_index;
     struct list children;         //list of children
     struct list_elem child_elem;   //list elem for child threads
-    struct semaphore *sema_parent_block;  //for blocking parent 
+    struct semaphore sema_parent_block;  //for blocking parent 
+
+    struct semaphore exec_block;  //for blocking parent 
+
+    struct semaphore wait_block;  //blocks child from terminating
+
+    struct semaphore one_list;
 
     struct thread *parent;
 
@@ -123,7 +132,7 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
-    int64_t ticks;			/*total ticks until thread wakes up  */
+    int64_t ticks;      /*total ticks until thread wakes up  */
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */

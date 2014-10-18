@@ -11,11 +11,9 @@
 
 static void syscall_handler (struct intr_frame *);
 int exec (const char *cmd_line);
-struct semaphore * sema_exec;  // binary semaphore to control access to exec function
-struct semaphore * sema_pwait;
-struct semaphore * sema_write;
-int *file_pointers[100] = {NULL};
-int fd_index = 2;
+struct semaphore sema_exec;  // binary semaphore to control access to exec function
+struct semaphore sema_pwait;
+struct semaphore sema_write;
 
 void
 syscall_init (void) 
@@ -24,20 +22,27 @@ syscall_init (void)
   sema_init(&sema_exec, 1);
   sema_init(&sema_pwait, 1);
   sema_init(&sema_write, 1);
+//printf("\n\n\nprintout\n\n\n");
 }
 
 static void
 syscall_handler (struct intr_frame *f) 
 {
-  printf ("system call!\n");
-  thread_exit();
+  //printf ("system call!\n");
+   
   //hex_dump(f->esp, f->esp, 1000,1);
 
   // get the system call
   int * esp = f->esp;
+  //printf("\n\n\n\n\nGETS HERE\n\n\n\n");
+ // printf("\n\n\n\nThe syscall is %d\n", *(esp));
 
- // printf("The syscall is %s", *(esp+2));
+ // printf("The fd is %d\n", *(esp+1));
+  //printf("The buffer is %s\n", *(esp+2));
+   //printf("The size is %d\n", *(esp+3));
   
+ // thread_exit();
+
  int fd;
  int pid;
  char * cmd_line;
@@ -49,83 +54,67 @@ syscall_handler (struct intr_frame *f)
 
   if(is_kernel_vaddr(*esp))  //if the pointer is in kernal exit right away
   {
+    printf("KERNAL BAD");
     thread_exit();
   }
   //check for other null pointers or unmapped things
   int sys_num = *esp;
 
-  // get pointer to eax
-  uint32_t * eax = f->eax;
-
-  // get the file name and args
- // char * cmd_line = get_cmd_line((char *) f->esp);
-  printf("the write call is %d\n", sys_num);
-//thread_exit ();
-
 
 	// redirect to the correct function handler
 	switch(sys_num)
 	{ 
-		case SYS_WAIT:    
+		case SYS_WAIT:    //3
 
       pid = *(esp+1); //gets first argument that is pid
-      eax = wait (pid);
+      f->eax = wait (pid);
 			break;
 
-    case SYS_EXEC:  
+    case SYS_EXEC:  //2
 
-      printf("\n\n\n\n\n\n\n\n");
       cmd_line = *(esp+1); // gets first argument
-      exec(cmd_line);
+      f->eax = exec(cmd_line);
       break;
 
-    case SYS_HALT:     
+    case SYS_HALT:     //0
 
       halt();
       break;
 
-    case SYS_EXIT:    
+    case SYS_EXIT:    //1
 
       status = *(esp+1); // gets first argument
       exit(status);
       break;
 
-    case SYS_CREATE:   // create();
+    case SYS_CREATE:   // 4
 
       file = *(esp+1);
       initial_size = *(esp+2);
-      printf("file name is: %s\n initial size is: %d\n", file, initial_size);
-
-      if(create(file, initial_size))
-      {
-        eax = 1;
-        
-      }
-        
-      else
-      {
-        ASSERT(0);
-        eax = 0;
-      }
-        
+     // printf("file name is: %s\n initial size is: %d\n", file, initial_size);
+      f->eax = create(file, initial_size);
 
      // eax = create(file, initial_size);  //boolean value
       break;
 
-    case SYS_REMOVE:    
+    case SYS_REMOVE:    //5
 
       file = *(esp+1);
       //eax = remove(file);               //boolean value
       break;
 
-    case SYS_OPEN:     
+    case SYS_OPEN:     //6
+
 
       file = *(esp+1);
 
-     // eax = open(file);       //boolean value
+     // printf("Open file: %s", file); // write();
+      f->eax = open(file);       //boolean value
+
+
       break;
 
-    case SYS_FILESIZE:  
+    case SYS_FILESIZE:  //7
 
       fd = *(esp+1);
       filesize(fd);
@@ -145,11 +134,11 @@ syscall_handler (struct intr_frame *f)
       buf = *(esp+2);
       size = *(esp+3); 
 
-    // printf("FD should be 1: %d", fd); // write();
+   //  printf("FD should be 1: %d", fd); // write();
     //  printf("Buffer is: %s", buf); // write();
-    //  printf("size is: %d", size); // write();
+     // printf("size is: %d", size); // write();
 
-      eax = write(fd, buf, size);
+      f->eax = write(fd, buf, size);
 
     //  thread_exit ();
       break;
@@ -169,54 +158,6 @@ syscall_handler (struct intr_frame *f)
 	
 }
 
-// gets the associated cmd_line from the fram
-// look into the esp stack to get name plus args in correct order
-/*char * get_cmd_line(char * esp UNUSED)
-{
-  // save esp to revert later
-  char * save_esp = esp;
-
-  // get to top of argc (reads downwards)
-  esp+=4;
-
-  // save the count of arguments
-  int arg_count = *esp;
-
-  // gets to top of arg0
-  esp+=8;
-
-  // gets where to jump into the args on top of stack
-  esp = *(char**)esp;     
-
-  // the command line to add to (for return)
-  char cmd_line[1000] = {NULL};
-  int i = 0;
-
-  // get each argument and file name
-  for(i = 0; arg_count > 0; i++)
-  {  
-    if(*esp == NULL)
-    {
-      *(cmd_line + i) = ' ';
-
-      arg_count--;
-    }
-    else
-    {
-       *(cmd_line + i) = *esp;
-    }
-
-    // get the next byte
-    esp++;
-  }
-
-  // revert esp to original value
-  esp = save_esp;
-
-  return cmd_line;
-}*/
-
-
 void 
 halt (void)
 {
@@ -229,41 +170,58 @@ exit (int status)
   struct thread *cur = thread_current();
 
   cur->parent->exit_status = status;
+  //  printf("GOT TO exit");
+  printf ("%s: exit(%d)\n",cur->name, status); 
+  thread_exit();
 }
-
+ 
 // execute the given command line
 int 
 exec (const char *cmd_line)
 {
-  return 0;
-/*  // synchronization, only one can use at a time
-  sema_down(sema_exec);
+
+  //printf("\n\n\n\n\nEXEC IS HERE\n\n\n\n");
+  struct thread *cur = thread_current();
+
+  char *token, *save_ptr; // for spliter
+
+  char s[100]; //setting up s
+
+  strlcpy (s, cmd_line, strlen(cmd_line)+1);  //putting cmdline in s
+
+  char * file_name;
+
+  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
+        token = strtok_r (NULL, " ", &save_ptr))
+  {
+    file_name = token;
+    break;
+  }
 
   // get string of args and file name, pass into execute
-  int tid = process_execute(cmd_line);
+  int tid = process_execute(file_name);
+
+  sema_down(&(cur->exec_block));
 
   // wait for child to return
   if(tid) // if successfully waited
   {
     // return eax
-    *eax = tid;
     return tid;
   }
   else        // if child erred on wait
   {
-    // return eax
-    *eax = -1;
     return -1;
-  }
-  sema_up(sema_exec);*/
+  }  
 }
 
 int 
 wait (pid_t pid)
 {
-  sema_down(&sema_pwait);                // block any duplicate waits
+  //printf("before wait\n");
+  //sema_down(&sema_pwait);                // block any duplicate waits
   int return_val = process_wait (pid);  // call process_wait
-  sema_up(&sema_pwait);                  // finished waiting
+ //  printf("after wait\n");                // finished waiting
 
   return return_val;                    // finished waiting
 }
@@ -286,14 +244,19 @@ int
 open (const char *file)
 {
 
-    file_pointers[fd_index] = filesys_open(file);
-    if(file_pointers[fd_index] == NULL)
+    struct thread *cur = thread_current();
+   // cur->fd_index = (cur->fd_index) + 1;
+    cur->file_pointers[cur->fd_index] = filesys_open(file);
+
+  //  printf("File desctriptor Just added: %d\n", cur->file_pointers[cur->fd_index]);
+    if(cur->file_pointers[cur->fd_index] == NULL)
     {
       return -1;
     }
     else
     {
-      return fd_index++;
+
+      return cur->fd_index++;
     }
     
 }
@@ -317,6 +280,7 @@ int
 write (int fd, const void *buffer, unsigned size)
 {
  // printf("We got to write!");
+ // printf("File desctriptor at start of write: %d\n", fd);
 
  // prevent processes from writing mixed up
   sema_down(&sema_write);
@@ -333,15 +297,15 @@ write (int fd, const void *buffer, unsigned size)
       return 0;
     }    
 
-    if(size<=200)
-    {
+    //if(size<=200)
+    //{
       putbuf(buffer, size);
 
       sema_up(&sema_write);
       return size;
-    }
+   // }
 
-    int i;
+   /* int i;
     for(i = 0; i<size; i+=200)
     {
       if(size_cpy <= 200)
@@ -353,14 +317,16 @@ write (int fd, const void *buffer, unsigned size)
 
       size_cpy = size_cpy - 200;
      
-    }
+    }*/
 
   }
-  if(fd != 0 || fd != 1)
+  if(fd != 0 && fd != 1)
   {
     //writing to file
     sema_up(&sema_write);
-    return file_write (file_pointers[fd], buffer, size);
+    struct thread *cur = thread_current();
+    //printf("File desctriptor is: %d\n", fd);
+    return file_write (cur->file_pointers[fd], buffer, size);
 
   }
 

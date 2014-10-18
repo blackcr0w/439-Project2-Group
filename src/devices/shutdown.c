@@ -28,14 +28,6 @@ static void print_stats (void);
 void
 shutdown (void)
 {
-  printf("\n\nSHUTDOWN TYPE: %d", how);
-
-  printf("\n\nSHUTDOWN POWER OFF: %d", SHUTDOWN_POWER_OFF);
-
-  printf("\n\nSHUTDOWN REBOOT: %d", SHUTDOWN_REBOOT);
-
-
-
   switch (how)
     {
     case SHUTDOWN_POWER_OFF:
@@ -98,13 +90,9 @@ shutdown_power_off (void)
   const char s[] = "Shutdown";
   const char *p;
 
- printf ("\n\n\n\nFILESYS DONE ERROR \n\n\n\n"); //REMOVE
-
 #ifdef FILESYS
   filesys_done ();
 #endif
-
-  printf ("\n\n\n\nstats ERROR \n\n\n\n"); //REMOVE
 
   print_stats ();
 

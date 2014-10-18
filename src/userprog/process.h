@@ -8,6 +8,4 @@ int process_wait (tid_t);
 void process_exit (void);
 void process_activate (void);
 
-char* first_file_name(char* cmd);
-
 #endif /* userprog/process.h */

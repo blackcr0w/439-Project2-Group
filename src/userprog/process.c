@@ -19,7 +19,6 @@
 #include "threads/vaddr.h"
 
 static thread_func start_process NO_RETURN;
-static char * get_cmd_line(char * esp UNUSED);
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
 /* Starts a new thread running a user program loaded from
@@ -29,18 +28,11 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
+
+  //printf("\n\n\nprocess_execute\n\n\n");
+
   char *fn_copy;
   tid_t tid;
-
-  /* sema up when done executing!!!!!!!!!!!!!!!!!!!!! */
-
-
-
-  // initialize the thread's blocked semaphore
-  // sema_init ((thread_current() -> sema_block), 0);
-
-  // change status of thread to running
-  // thread_current() -> status = THREAD_RUNNING;
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
@@ -51,19 +43,19 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
-
- // printf("\n\n\n\n\nTHE TID REALLY IS THIS:  %d \n\n\n\n\n", tid);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
 
-
   struct thread *child = get_thread_tid(tid);
+
+  child->proc_name = file_name;
   if(!child == NULL)
   {
     child->parent = thread_current();
      // populate the children of the thread
     list_push_front (&thread_current()->children, &child->child_elem);
   }
+
   return tid;
 }
 
@@ -72,7 +64,6 @@ process_execute (const char *file_name)
 static void
 start_process (void *file_name_)
 {
-
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
@@ -87,10 +78,7 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) 
-  {
     thread_exit ();
-  }
-    
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -114,47 +102,62 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid) 
 {
-  //printf("\n\n\n\nPROBLEM\n\n\n\n");
-  /*while(1)  //infinite loop
+  /*while(1)
   {
-  } */
-
-
- // printf("\n\n\n\n\nCHILD TID IS: %d \n\n\n\n\n", child_tid);
-
+  }
+  return -1;*/
+  sema_down(&thread_current() -> one_list);
   struct thread *current =  thread_current();
  
   struct list children = current -> children;
+
+
+
+ // int size = list_size (&children);
+
+  // printf("\nLength is: %d\n", size);
    
   struct list_elem *current_child;  // list elem for loop
-
- // printf("\n\n\n\n\nGOT HERE\n\n\n\n\n");
-
+//printf("\n\n\n\n\nEWAIT IS HERE\n\n\n\n");
   // loop through the children of currently running thread
+  if(list_empty(&children))
+    return -1;
+
   for (current_child = list_begin (&children); current_child != list_end (&children);
             current_child = list_next (current_child))
   {
-
+    //printf("\nProcess Wait 1 %d\n");
     struct thread *t = list_entry (current_child, struct thread, child_elem);
     tid_t tid = t -> tid;
-  //  printf("\n\n\n\n\nGOT HERE TID %d \n\n\n\n\n", tid);
+   printf("\nChild is: %d\n", tid);
 
-    if(t -> tid == child_tid) // if found direct child
+
+  
+
+
+    //ASSERT(t->alive == 1 || t->alive == 0);  //checks to make sure that alive sometimes
+    if(tid == child_tid) // if found direct child
     {
-      //thread_exit();
-
+      
+  // printf("\nProcess Wait 3\n");
       list_remove(&t->child_elem);
+      sema_up(&t-> wait_block);    //unblocking so child can finish
+       sema_up(&current ->one_list);
 
-      if(t->alive == 1)  //if child is alive wait until it finishes and return it
+      if(t->alive != 1)  //if child is dead, return immediately
+        return current->exit_status;
+
+       //    printf("\nProcess Wait 4\n");
+
         sema_down(&current->sema_parent_block);  // block parent so that child may finish
-
         return current->exit_status;
     }
   }
-
+       // printf("\nProcess Wait 5\n");
   // child_tid not a direct child or child already been waited on before
-    return -1;
 
+   sema_up(&current ->one_list);
+    return -1;
 }
 
 /* Free the current process's resources. */
@@ -164,7 +167,7 @@ process_exit (void)
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
-    cur->alive = 0;
+      cur->alive = 0;
 
     struct list_elem *set_null;
 
@@ -180,6 +183,9 @@ process_exit (void)
     {
       sema_up(&cur-> parent -> sema_parent_block);
     }
+
+      sema_down(&cur-> wait_block);  //blocking so parent can get info first
+
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -197,6 +203,8 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+
+
 }
 
 /* Sets up the CPU for running user code in the current
@@ -214,7 +222,7 @@ process_activate (void)
      interrupts. */
   tss_update ();
 }
-
+
 /* We load ELF binaries.  The following definitions are taken
    from the ELF specification, [ELF1], more-or-less verbatim.  */
 
@@ -278,12 +286,11 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp, char *);
+static bool setup_stack (void **esp, char * file_name);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
                           bool writable);
-
 
 /* Loads an ELF executable from FILE_NAME into the current thread.
    Stores the executable's entry point into *EIP
@@ -339,7 +346,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
       || ehdr.e_phentsize != sizeof (struct Elf32_Phdr)
       || ehdr.e_phnum > 1024) 
     {
-      printf ("load: %s: error loading executable\n", file_name);
+      printf ("load: %s: error loading executable\n", real_file_name);
       goto done; 
     }
 
@@ -406,24 +413,19 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if (!setup_stack (esp, file_name))
     goto done;
 
-  
-
-
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
 
-
   success = true;
+
+   sema_up(&t->parent->exec_block);  //sema up on parents blocking on exec semaphore
 
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
-
-  //ASSERT(false);
-
   return success;
 }
-
+
 /* load() helpers. */
 
 static bool install_page (void *upage, void *kpage, bool writable);
@@ -635,7 +637,7 @@ setup_stack (void **esp, char *file_name)
 
   *esp = myEsp;
 
-  hex_dump(*esp, *esp, PHYS_BASE-*esp,1);
+  //hex_dump(*esp, *esp, PHYS_BASE-*esp,1);
 
   return success;
 }

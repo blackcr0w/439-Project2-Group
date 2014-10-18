@@ -538,13 +538,20 @@ init_thread (struct thread *t, const char *name, int priority)
     t -> parent = NULL;
     t -> exit_status = -1;
     t -> alive = 1;
+    t -> fd_index = 2;
+
 
     // intitialize children list of thread
 
-    list_init(&(t -> children));
+    list_init(&t -> children);
 
 
+    sema_init(&t->wait_block, 0);
+    
     sema_init(&t->sema_parent_block, 0);
+    sema_init(&t->exec_block, 0);
+
+    sema_init(&t ->one_list, 1);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
