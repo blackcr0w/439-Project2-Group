@@ -116,9 +116,7 @@ struct thread
     struct semaphore exec_block;  //for blocking parent 
 
     struct semaphore wait_block;  //blocks child from terminating
-
-    struct semaphore one_list;
-
+    
     struct thread *parent;
 
     int exit_status;

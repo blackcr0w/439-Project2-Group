@@ -10,6 +10,7 @@
 #include "threads/vaddr.h"
 
 static void syscall_handler (struct intr_frame *);
+
 int exec (const char *cmd_line);
 struct semaphore sema_exec;  // binary semaphore to control access to exec function
 struct semaphore sema_pwait;
@@ -29,19 +30,12 @@ static void
 syscall_handler (struct intr_frame *f) 
 {
   //printf ("system call!\n");
-   
-  //hex_dump(f->esp, f->esp, 1000,1);
 
   // get the system call
   int * esp = f->esp;
-  //printf("\n\n\n\n\nGETS HERE\n\n\n\n");
- // printf("\n\n\n\nThe syscall is %d\n", *(esp));
 
- // printf("The fd is %d\n", *(esp+1));
-  //printf("The buffer is %s\n", *(esp+2));
-   //printf("The size is %d\n", *(esp+3));
-  
- // thread_exit();
+  bad_pointer(esp);
+
 
  int fd;
  int pid;
@@ -52,11 +46,7 @@ syscall_handler (struct intr_frame *f)
  unsigned int size;
  unsigned int initial_size;
 
-  if(is_kernel_vaddr(*esp))  //if the pointer is in kernal exit right away
-  {
-    printf("KERNAL BAD");
-    thread_exit();
-  }
+  
   //check for other null pointers or unmapped things
   int sys_num = *esp;
 
@@ -66,12 +56,14 @@ syscall_handler (struct intr_frame *f)
 	{ 
 		case SYS_WAIT:    //3
 
+      bad_pointer(esp+1);
       pid = *(esp+1); //gets first argument that is pid
       f->eax = wait (pid);
 			break;
 
     case SYS_EXEC:  //2
 
+      bad_pointer(esp+1);
       cmd_line = *(esp+1); // gets first argument
       f->eax = exec(cmd_line);
       break;
@@ -83,11 +75,16 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_EXIT:    //1
 
+      bad_pointer(esp+1);
+
       status = *(esp+1); // gets first argument
       exit(status);
       break;
 
     case SYS_CREATE:   // 4
+
+      bad_pointer(esp+1);
+      bad_pointer(esp+2);
 
       file = *(esp+1);
       initial_size = *(esp+2);
@@ -99,12 +96,15 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_REMOVE:    //5
 
+      bad_pointer(esp+1);
+
       file = *(esp+1);
       //eax = remove(file);               //boolean value
       break;
 
     case SYS_OPEN:     //6
 
+      bad_pointer(esp+1);
 
       file = *(esp+1);
 
@@ -116,19 +116,30 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_FILESIZE:  //7
 
+      bad_pointer(esp+1);
+
       fd = *(esp+1);
       filesize(fd);
       break;
 
     case SYS_READ:   
 
-   //   fd = *(esp+1);
-  //    buf = *(esp+2);
-  //    unsigned size = *(esp+3); 
-  //    eax = read(fd, buf, size);
+      bad_pointer(esp+1);
+      bad_pointer(esp+2);
+      bad_pointer(esp+3);
+
+      fd = *(esp+1);
+      buf = *(esp+2);
+      size = *(esp+3);
+      //printf("Size before %d", size); 
+      f->eax = read(fd, buf, size);
       break;
 
     case SYS_WRITE:   
+
+      bad_pointer(esp+1);
+      bad_pointer(esp+2);
+      bad_pointer(esp+3);
 
       fd = *(esp+1);
       buf = *(esp+2);
@@ -156,6 +167,26 @@ syscall_handler (struct intr_frame *f)
 		// ...
 	}
 	
+}
+
+void
+bad_pointer(int *esp)
+{
+  struct thread *cur = thread_current();     //exit status 0??????????
+ // printf("ESP is: %p\n", esp);
+  if(esp == NULL || is_kernel_vaddr(esp) || 
+        pagedir_get_page(cur->pagedir, esp) == NULL) //need to check for unmapped
+  {
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+    thread_exit();
+  }
+      
+  if(*esp == NULL)
+  {
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+    thread_exit();
+  }
+ 
 }
 
 void 
@@ -267,31 +298,48 @@ filesize (int fd)
   return 0;
 }
 
-/*int 
+int 
 read (int fd, void *buffer, unsigned size)
 {
-  if(fd ==0) //read from keyboard 
+  struct thread *cur = thread_current();
+
+  //printf("\nsize: %d\n", size);
+  //error checking
+  char * reading = NULL;
+ /* if(fd ==0) //read from keyboard 
   {
-    input_getc();
+    int i;
+    for(i = 0; i < size; i++)
+    {
+  //    *(buffer+i) = input_getc();
+    }
+    return size;
+  }*/
+  if(fd > 0 && fd <= cur->fd_index && buffer != NULL && size >= 0)
+  {
+    int ret = (int)file_read(cur->file_pointers[fd], buffer, size);
+
+
+   // printf("\nfinished size: %d\n", ret);
+
+    return ret;
   }
-}*/
+  return -1;
+}
 
 int 
 write (int fd, const void *buffer, unsigned size)
 {
- // printf("We got to write!");
- // printf("File desctriptor at start of write: %d\n", fd);
-
- // prevent processes from writing mixed up
+  // prevent processes from writing mixed up
   sema_down(&sema_write);
 
   unsigned size_cpy = size;
-//ASSERT(false);
+
   //write to console
   if(fd==1)
   {
     // if there is nothing to write
-    if(size == 0 || buffer == NULL)
+    if(size <= 0 || buffer == NULL)
     {
       sema_up(&sema_write);
       return 0;

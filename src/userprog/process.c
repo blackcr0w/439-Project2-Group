@@ -21,6 +21,8 @@
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
+ struct semaphore one_list;
+
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
@@ -102,61 +104,39 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid) 
 {
-  /*while(1)
-  {
-  }
-  return -1;*/
-  sema_down(&thread_current() -> one_list);
   struct thread *current =  thread_current();
- 
-  struct list children = current -> children;
-
-
-
- // int size = list_size (&children);
-
-  // printf("\nLength is: %d\n", size);
    
   struct list_elem *current_child;  // list elem for loop
-//printf("\n\n\n\n\nEWAIT IS HERE\n\n\n\n");
+
   // loop through the children of currently running thread
-  if(list_empty(&children))
+  if(list_empty(&current -> children))
     return -1;
 
-  for (current_child = list_begin (&children); current_child != list_end (&children);
+  for (current_child = list_begin (&current -> children); current_child != list_end (&current -> children);
             current_child = list_next (current_child))
   {
-    //printf("\nProcess Wait 1 %d\n");
+
     struct thread *t = list_entry (current_child, struct thread, child_elem);
     tid_t tid = t -> tid;
-   printf("\nChild is: %d\n", tid);
 
+    if(current_child == list_end (&current -> children))
+    {
 
+      return -1;
+    }
   
-
-
-    //ASSERT(t->alive == 1 || t->alive == 0);  //checks to make sure that alive sometimes
     if(tid == child_tid) // if found direct child
     {
-      
-  // printf("\nProcess Wait 3\n");
       list_remove(&t->child_elem);
       sema_up(&t-> wait_block);    //unblocking so child can finish
-       sema_up(&current ->one_list);
 
       if(t->alive != 1)  //if child is dead, return immediately
         return current->exit_status;
-
-       //    printf("\nProcess Wait 4\n");
-
-        sema_down(&current->sema_parent_block);  // block parent so that child may finish
-        return current->exit_status;
+      
+      sema_down(&current->sema_parent_block);  // block parent so that child may finish
+      return current->exit_status;
     }
   }
-       // printf("\nProcess Wait 5\n");
-  // child_tid not a direct child or child already been waited on before
-
-   sema_up(&current ->one_list);
     return -1;
 }
 
@@ -167,7 +147,7 @@ process_exit (void)
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
-      cur->alive = 0;
+    cur->alive = 0;
 
     struct list_elem *set_null;
 

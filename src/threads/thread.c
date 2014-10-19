@@ -540,6 +540,7 @@ init_thread (struct thread *t, const char *name, int priority)
     t -> alive = 1;
     t -> fd_index = 2;
 
+    int *file_pointers[130] = {NULL};
 
     // intitialize children list of thread
 
@@ -550,8 +551,6 @@ init_thread (struct thread *t, const char *name, int priority)
     
     sema_init(&t->sema_parent_block, 0);
     sema_init(&t->exec_block, 0);
-
-    sema_init(&t ->one_list, 1);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
