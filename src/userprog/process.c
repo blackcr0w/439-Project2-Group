@@ -21,7 +21,7 @@
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
- struct semaphore one_list;
+// struct semaphore one_list;
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -50,7 +50,7 @@ process_execute (const char *file_name)
 
   struct thread *child = get_thread_tid(tid);
 
-  child->proc_name = file_name;
+  //child->proc_name = file_name;
   if(!child == NULL)
   {
     child->parent = thread_current();
@@ -119,11 +119,11 @@ process_wait (tid_t child_tid)
     struct thread *t = list_entry (current_child, struct thread, child_elem);
     tid_t tid = t -> tid;
 
-    if(current_child == list_end (&current -> children))
+   /* if(current_child == list_end (&current -> children))
     {
 
       return -1;
-    }
+    }*/
   
     if(tid == child_tid) // if found direct child
     {

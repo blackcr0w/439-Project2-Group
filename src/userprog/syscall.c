@@ -75,7 +75,7 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_EXIT:    //1
 
-      bad_pointer(esp+1);
+    //  bad_pointer(esp+1);
 
       status = *(esp+1); // gets first argument
       exit(status);
@@ -96,7 +96,7 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_REMOVE:    //5
 
-      bad_pointer(esp+1);
+    //  bad_pointer(esp+1);
 
       file = *(esp+1);
       //eax = remove(file);               //boolean value
@@ -104,7 +104,7 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_OPEN:     //6
 
-      bad_pointer(esp+1);
+    //  bad_pointer(esp+1);
 
       file = *(esp+1);
 
@@ -116,7 +116,7 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_FILESIZE:  //7
 
-      bad_pointer(esp+1);
+    //  bad_pointer(esp+1);
 
       fd = *(esp+1);
       filesize(fd);
@@ -124,14 +124,13 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_READ:   
 
-      bad_pointer(esp+1);
-      bad_pointer(esp+2);
-      bad_pointer(esp+3);
+      // bad_pointer(esp+1);
+      // bad_pointer(esp+2);
+      // bad_pointer(esp+3);
 
       fd = *(esp+1);
       buf = *(esp+2);
-      size = *(esp+3);
-      //printf("Size before %d", size); 
+      size = *(esp+3); 
       f->eax = read(fd, buf, size);
       break;
 
@@ -172,20 +171,30 @@ syscall_handler (struct intr_frame *f)
 void
 bad_pointer(int *esp)
 {
-  struct thread *cur = thread_current();     //exit status 0??????????
+  struct thread *cur = thread_current();
  // printf("ESP is: %p\n", esp);
-  if(esp == NULL || is_kernel_vaddr(esp) || 
-        pagedir_get_page(cur->pagedir, esp) == NULL) //need to check for unmapped
+  if(esp == NULL) //need to check for unmapped
   {
     printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+
+    //  printf("\n\n\nBAAAD SPOT1\n\n\n");
+
     thread_exit();
   }
       
-  if(*esp == NULL)
+  if(pagedir_get_page(cur->pagedir, esp) == NULL || is_kernel_vaddr(esp))
   {
     printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+     //printf("\n\n\nBAAAD SPOT2\n\n\n");
     thread_exit();
   }
+
+  /*if(*esp == NULL)
+  {
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+     printf("\n\n\nBAAAD SPOT2\n\n\n");
+    thread_exit();
+  }*/
  
 }
 
@@ -193,7 +202,7 @@ void
 halt (void)
 {
   shutdown_power_off();
-}
+} 
 
 void 
 exit (int status)
@@ -201,7 +210,9 @@ exit (int status)
   struct thread *cur = thread_current();
 
   cur->parent->exit_status = status;
-  //  printf("GOT TO exit");
+  //   printf("GOT TO exit");
+  //printf("TID: %d\n", cur->tid);
+  //printf("EXIT STATUS: %d\n\n", status);
   printf ("%s: exit(%d)\n",cur->name, status); 
   thread_exit();
 }
@@ -260,8 +271,6 @@ wait (pid_t pid)
 bool 
 create (const char *file, unsigned initial_size)
 {
-  //char file
-  //printf("file name is: %s\n initial size is: %d", initial_size);
   return filesys_create(file, initial_size);
 }
 
@@ -302,10 +311,10 @@ int
 read (int fd, void *buffer, unsigned size)
 {
   struct thread *cur = thread_current();
-
+  unsigned saved = size;
   //printf("\nsize: %d\n", size);
   //error checking
-  char * reading = NULL;
+  //char * reading = NULL;
  /* if(fd ==0) //read from keyboard 
   {
     int i;
@@ -315,31 +324,37 @@ read (int fd, void *buffer, unsigned size)
     }
     return size;
   }*/
-  if(fd > 0 && fd <= cur->fd_index && buffer != NULL && size >= 0)
-  {
-    int ret = (int)file_read(cur->file_pointers[fd], buffer, size);
+  /*if(fd > 0 && fd <= cur->fd_index && buffer != NULL && size >= 0)
+  {*/
+    int ret = file_read(cur->file_pointers[fd], buffer, size);
 
-
+    printf("\nfd: %d\n", fd);
    // printf("\nfinished size: %d\n", ret);
-
+    size = saved;
     return ret;
-  }
-  return -1;
+  //}
+  //return -1;
 }
 
 int 
 write (int fd, const void *buffer, unsigned size)
 {
-  // prevent processes from writing mixed up
+
+ // if(fd < 0)
+ //   thread_exit();
+ // printf("We got to write!");
+ // printf("File desctriptor at start of write: %d\n", fd);
+
+ // prevent processes from writing mixed up
   sema_down(&sema_write);
 
   unsigned size_cpy = size;
-
+//ASSERT(false);
   //write to console
   if(fd==1)
   {
     // if there is nothing to write
-    if(size <= 0 || buffer == NULL)
+    if(size == 0 || buffer == NULL)
     {
       sema_up(&sema_write);
       return 0;
