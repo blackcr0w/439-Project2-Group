@@ -210,10 +210,13 @@ exit (int status)
   struct thread *cur = thread_current();
 
   cur->parent->exit_status = status;
-  //   printf("GOT TO exit");
-  //printf("TID: %d\n", cur->tid);
-  //printf("EXIT STATUS: %d\n\n", status);
-  printf ("%s: exit(%d)\n",cur->name, status); 
+
+  char *save_ptr; // for spliter
+  // token = strtok_r (cur->name, " ", &save_ptr);
+
+  //  printf("GOT TO exit");
+  // printf("\n\nNAME: %s\n\n", cur->name);
+  printf ("%s: exit(%d)\n",strtok_r (cur->name, " ", &save_ptr), status); 
   thread_exit();
 }
  
@@ -225,20 +228,12 @@ exec (const char *cmd_line)
   //printf("\n\n\n\n\nEXEC IS HERE\n\n\n\n");
   struct thread *cur = thread_current();
 
-  char *token, *save_ptr; // for spliter
 
-  char s[100]; //setting up s
-
+  char s[100];
   strlcpy (s, cmd_line, strlen(cmd_line)+1);  //putting cmdline in s
 
-  char * file_name;
-
-  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
-        token = strtok_r (NULL, " ", &save_ptr))
-  {
-    file_name = token;
-    break;
-  }
+  char *save_ptr; // for spliter
+  char * file_name = strtok_r (s, " ", &save_ptr);
 
   // get string of args and file name, pass into execute
   int tid = process_execute(file_name);
@@ -288,7 +283,7 @@ open (const char *file)
    // cur->fd_index = (cur->fd_index) + 1;
     cur->file_pointers[cur->fd_index] = filesys_open(file);
 
-  //  printf("File desctriptor Just added: %d\n", cur->file_pointers[cur->fd_index]);
+  //   p rintf("File desctriptor Just added: %d\n", cur->file_pointers[cur->fd_index]);
     if(cur->file_pointers[cur->fd_index] == NULL)
     {
       return -1;
@@ -304,14 +299,17 @@ open (const char *file)
 int 
 filesize (int fd)
 {
-  return 0;
+  // Make sure that the file is valid
+  if(fd<2 || fd>thread_current()->fd_index)
+    return 0;
+
+  return file_length (thread_current()->file_pointers[fd]);
 }
 
 int 
 read (int fd, void *buffer, unsigned size)
 {
   struct thread *cur = thread_current();
-  unsigned saved = size;
   //printf("\nsize: %d\n", size);
   //error checking
   //char * reading = NULL;
@@ -324,16 +322,15 @@ read (int fd, void *buffer, unsigned size)
     }
     return size;
   }*/
-  /*if(fd > 0 && fd <= cur->fd_index && buffer != NULL && size >= 0)
-  {*/
+  if(fd > 0 && fd <= cur->fd_index && buffer != NULL && size >= 0)
+  {
     int ret = file_read(cur->file_pointers[fd], buffer, size);
 
     printf("\nfd: %d\n", fd);
    // printf("\nfinished size: %d\n", ret);
-    size = saved;
     return ret;
-  //}
-  //return -1;
+  }
+  return -1;
 }
 
 int 
@@ -400,20 +397,25 @@ write (int fd, const void *buffer, unsigned size)
 }
 
 
-/*void 
+void 
 seek (int fd , unsigned position)
 {
-  
-}*/
+  if((fd>=2 && fd<=thread_current()->fd_index) || position>=0)
+    file_seek (thread_current()->file_pointers[fd], position);
+}
 
-/*unsigned 
-tell (int fd UNUSED)
+unsigned 
+tell (int fd)
 {
-  return 0;
-}*/
+  if(fd<2 || fd>thread_current()->fd_index)
+    return 0;
 
-/*void 
-close (int fd UNUSED)
+  return file_tell (thread_current()->file_pointers[fd]); // maybe plus 1
+}
+
+void 
+close (int fd)
 {
-
-}*/
+  if(fd>=2 && fd<=thread_current()->fd_index)
+    file_close (thread_current()->file_pointers[fd]); 
+}

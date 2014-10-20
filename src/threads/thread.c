@@ -548,6 +548,7 @@ init_thread (struct thread *t, const char *name, int priority)
 
 
     sema_init(&t->wait_block, 0);
+    sema_init(&t->test, 1);
     
     sema_init(&t->sema_parent_block, 0);
     sema_init(&t->exec_block, 0);

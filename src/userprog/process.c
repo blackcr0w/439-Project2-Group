@@ -120,9 +120,9 @@ process_wait (tid_t child_tid)
     tid_t tid = t -> tid;
 
    /* if(current_child == list_end (&current -> children))
-    {
-
-      return -1;
+    { 
+  
+       r   eturn -1;
     }*/
   
     if(tid == child_tid) // if found direct child
@@ -130,8 +130,11 @@ process_wait (tid_t child_tid)
       list_remove(&t->child_elem);
       sema_up(&t-> wait_block);    //unblocking so child can finish
 
+      // RACE CONDITION!!!!!??????!!!!!???? 
+      sema_up(&t->test);
       if(t->alive != 1)  //if child is dead, return immediately
         return current->exit_status;
+      sema_down(&t->test);
       
       sema_down(&current->sema_parent_block);  // block parent so that child may finish
       return current->exit_status;

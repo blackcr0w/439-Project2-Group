@@ -101,7 +101,8 @@ struct thread
     int original_priority;    
     struct list locksAq;    //list of aquired locks that the thread has
     struct lock *lockWait;    //lock potentially waiting on
-    struct semaphore *semWait; //for timer.c sleep    
+    struct semaphore *semWait; //for timer.c sleep
+    struct semaphore *test;    
     
 
     /*      Project 2 elements         */
