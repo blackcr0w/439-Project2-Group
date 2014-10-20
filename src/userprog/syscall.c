@@ -13,7 +13,7 @@ static void syscall_handler (struct intr_frame *);
 
 int exec (const char *cmd_line);
 struct semaphore sema_exec;  // binary semaphore to control access to exec function
-struct semaphore sema_pwait;
+//struct semaphore sema_pwait;
 struct semaphore sema_write;
 
 void
@@ -21,7 +21,7 @@ syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   sema_init(&sema_exec, 1);
-  sema_init(&sema_pwait, 1);
+  //sema_init(&sema_pwait, 1);
   sema_init(&sema_write, 1);
 //printf("\n\n\nprintout\n\n\n");
 }
@@ -242,14 +242,9 @@ exec (const char *cmd_line)
 
   // wait for child to return
   if(tid) // if successfully waited
-  {
-    // return eax
     return tid;
-  }
   else        // if child erred on wait
-  {
-    return -1;
-  }  
+    return -1;  
 }
 
 int 
@@ -279,21 +274,13 @@ int
 open (const char *file)
 {
 
-    struct thread *cur = thread_current();
-   // cur->fd_index = (cur->fd_index) + 1;
-    cur->file_pointers[cur->fd_index] = filesys_open(file);
+  struct thread *cur = thread_current();
+  cur->file_pointers[cur->fd_index] = filesys_open(file);
 
-  //   p rintf("File desctriptor Just added: %d\n", cur->file_pointers[cur->fd_index]);
-    if(cur->file_pointers[cur->fd_index] == NULL)
-    {
-      return -1;
-    }
-    else
-    {
-
-      return cur->fd_index++;
-    }
-    
+  if(cur->file_pointers[cur->fd_index] == NULL)
+    return -1;
+  else
+    return cur->fd_index++;
 }
 
 int 
@@ -310,7 +297,8 @@ int
 read (int fd, void *buffer, unsigned size)
 {
   struct thread *cur = thread_current();
-  //printf("\nsize: %d\n", size);
+  //sema_down(&sema_write);
+  //printf("\nsize: %d\n", size); 
   //error checking
   //char * reading = NULL;
  /* if(fd ==0) //read from keyboard 
@@ -326,10 +314,12 @@ read (int fd, void *buffer, unsigned size)
   {
     int ret = file_read(cur->file_pointers[fd], buffer, size);
 
-    printf("\nfd: %d\n", fd);
+    //printf("\nfd: %d\n", fd);
    // printf("\nfinished size: %d\n", ret);
     return ret;
   }
+
+  //sema_up(&sema_write);
   return -1;
 }
 

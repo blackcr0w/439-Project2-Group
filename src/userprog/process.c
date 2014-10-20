@@ -303,14 +303,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   strlcpy (s, file_name, strlen(file_name)+1);  //putting cmdline in s
 
-  char * real_file_name;
-
-  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
-        token = strtok_r (NULL, " ", &save_ptr))
-  {
-    real_file_name = token;
-    break;
-  }
+  char * real_file_name = strtok_r (s, " ", &save_ptr); 
 
   /* Open executable file. */
   file = filesys_open (real_file_name); //fix
