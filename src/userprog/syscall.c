@@ -34,7 +34,13 @@ syscall_handler (struct intr_frame *f)
   // get the system call
   int * esp = f->esp;
 
+  int * ptr = *esp;
   bad_pointer(esp);
+
+  // bad_pointer(esp);
+  if(esp==NULL)
+    thread_exit();
+// printf("esp is...\n%p\n\n\n", *esp);
 
 
  int fd;
@@ -51,18 +57,19 @@ syscall_handler (struct intr_frame *f)
   int sys_num = *esp;
 
 
-	// redirect to the correct function handler
-	switch(sys_num)
-	{ 
-		case SYS_WAIT:    //3
+  // redirect to the correct function handler
+  switch(sys_num)
+  { 
+    case SYS_WAIT:    //3
 
       bad_pointer(esp+1);
       pid = *(esp+1); //gets first argument that is pid
       f->eax = wait (pid);
-			break;
+      break;
 
     case SYS_EXEC:  //2
 
+    // printf("%p\n\n\n", *(esp+1));
       bad_pointer(esp+1);
       cmd_line = *(esp+1); // gets first argument
       f->eax = exec(cmd_line);
@@ -75,7 +82,7 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_EXIT:    //1
 
-    //  bad_pointer(esp+1);
+      bad_pointer(esp+1);
 
       status = *(esp+1); // gets first argument
       exit(status);
@@ -83,7 +90,7 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_CREATE:   // 4
 
-      bad_pointer(esp+1);
+      bad_pointer(*(esp+1));
       bad_pointer(esp+2);
 
       file = *(esp+1);
@@ -96,20 +103,22 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_REMOVE:    //5
 
-    //  bad_pointer(esp+1);
+     bad_pointer(*(esp+1));
 
       file = *(esp+1);
-      //eax = remove(file);               //boolean value
+      f->eax = remove(file);
       break;
 
     case SYS_OPEN:     //6
 
-    //  bad_pointer(esp+1);
+      // bad_pointer(esp+1);
+
+    bad_pointer(*(esp+1));
 
       file = *(esp+1);
 
      // printf("Open file: %s", file); // write();
-      f->eax = open(file);       //boolean value
+      f->eax = open(file);
 
 
       break;
@@ -119,14 +128,14 @@ syscall_handler (struct intr_frame *f)
     //  bad_pointer(esp+1);
 
       fd = *(esp+1);
-      filesize(fd);
+      f->eax = filesize(fd);
       break;
 
     case SYS_READ:   
 
-      // bad_pointer(esp+1);
-      // bad_pointer(esp+2);
-      // bad_pointer(esp+3);
+      bad_pointer(esp+1);
+      bad_pointer(*(esp+2));
+      bad_pointer(esp+3);
 
       fd = *(esp+1);
       buf = *(esp+2);
@@ -135,35 +144,37 @@ syscall_handler (struct intr_frame *f)
       break;
 
     case SYS_WRITE:   
-
       bad_pointer(esp+1);
-      bad_pointer(esp+2);
+      bad_pointer(*(esp+2));
       bad_pointer(esp+3);
-
       fd = *(esp+1);
       buf = *(esp+2);
       size = *(esp+3); 
-
-   //  printf("FD should be 1: %d", fd); // write();
-    //  printf("Buffer is: %s", buf); // write();
-     // printf("size is: %d", size); // write();
 
       f->eax = write(fd, buf, size);
 
     //  thread_exit ();
       break;
+    
     case SYS_SEEK:
-
-
+      bad_pointer(esp+1);
+      bad_pointer(esp+2);
+      seek (*(esp+1), *(esp+2));
       break;
+
     case SYS_TELL:
+      bad_pointer(esp+1);
+      f->eax = tell(*(esp+1));
       break;
+
     case SYS_CLOSE:
+      bad_pointer(esp+1);
+      close (*(esp+1));
       break;
+
 		default: 
-			printf("uh oh");
+			thread_exit();
 			break;
-		// ...
 	}
 	
 }
@@ -171,23 +182,35 @@ syscall_handler (struct intr_frame *f)
 void
 bad_pointer(int *esp)
 {
+// printf("got to bad pointer\n%p\n\n\n", esp);
+  // if(*esp == 0x20101234)
+    // ASSERT(0);
+    // printf("i\n\n\n\n got here");
+
   struct thread *cur = thread_current();
  // printf("ESP is: %p\n", esp);
   if(esp == NULL) //need to check for unmapped
   {
+     // printf("\n\n\nBAAAD SPOT1\n\n\n");
     printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
-
-    //  printf("\n\n\nBAAAD SPOT1\n\n\n");
-
     thread_exit();
   }
       
   if(pagedir_get_page(cur->pagedir, esp) == NULL || is_kernel_vaddr(esp))
   {
     printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
-     //printf("\n\n\nBAAAD SPOT2\n\n\n");
+     // printf("\n\n\nBAAAD SPOT2\n\n\n");
     thread_exit();
   }
+
+
+
+ /* if(is_kernel_vaddr(*esp))
+  {
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+     //printf("\n\n\nBAAAD SPOT2\n\n\n");
+    thread_exit();
+  }*/
 
   /*if(*esp == NULL)
   {
@@ -210,13 +233,13 @@ exit (int status)
   struct thread *cur = thread_current();
 
   cur->parent->exit_status = status;
-
-  char *save_ptr; // for spliter
+ 
+  char *save_ptr; // for spliter  
   // token = strtok_r (cur->name, " ", &save_ptr);
 
   //  printf("GOT TO exit");
   // printf("\n\nNAME: %s\n\n", cur->name);
-  printf ("%s: exit(%d)\n",strtok_r (cur->name, " ", &save_ptr), status); 
+  printf ("%s: exit(%d)\n", strtok_r(cur->name, " ", &save_ptr), status); 
   thread_exit();
 }
  
@@ -233,7 +256,7 @@ exec (const char *cmd_line)
   strlcpy (s, cmd_line, strlen(cmd_line)+1);  //putting cmdline in s
 
   char *save_ptr; // for spliter
-  char * file_name = strtok_r (s, " ", &save_ptr);
+  char * file_name = strtok_r(s, " ", &save_ptr);
 
   // get string of args and file name, pass into execute
   int tid = process_execute(file_name);
@@ -285,7 +308,7 @@ open (const char *file)
 
 int 
 filesize (int fd)
-{
+{ //printf("fizesize fd: %d\n\n\n", fd);
   // Make sure that the file is valid
   if(fd<2 || fd>thread_current()->fd_index)
     return 0;
@@ -296,12 +319,14 @@ filesize (int fd)
 int 
 read (int fd, void *buffer, unsigned size)
 {
+
+ // printf("read fd: %d\n\n\n", fd);
   struct thread *cur = thread_current();
   //sema_down(&sema_write);
   //printf("\nsize: %d\n", size); 
   //error checking
   //char * reading = NULL;
- /* if(fd ==0) //read from keyboard 
+  if(fd ==0) //read from keyboard 
   {
     int i;
     for(i = 0; i < size; i++)
@@ -309,13 +334,14 @@ read (int fd, void *buffer, unsigned size)
   //    *(buffer+i) = input_getc();
     }
     return size;
-  }*/
+  }
+  
   if(fd > 0 && fd <= cur->fd_index && buffer != NULL && size >= 0)
   {
     int ret = file_read(cur->file_pointers[fd], buffer, size);
 
     //printf("\nfd: %d\n", fd);
-   // printf("\nfinished size: %d\n", ret);
+    // printf("\nret: %d\n", ret);
     return ret;
   }
 
@@ -329,61 +355,67 @@ write (int fd, const void *buffer, unsigned size)
 
  // if(fd < 0)
  //   thread_exit();
- // printf("We got to write!");
+ // printf("We got to write!\n\n\n\n");
  // printf("File desctriptor at start of write: %d\n", fd);
 
  // prevent processes from writing mixed up
-  sema_down(&sema_write);
 
-  unsigned size_cpy = size;
-//ASSERT(false);
-  //write to console
-  if(fd==1)
+  struct thread * cur = thread_current();
+  if(fd > 0 && fd <= cur->fd_index && buffer != NULL && size >= 0)
   {
-    // if there is nothing to write
-    if(size == 0 || buffer == NULL)
+    sema_down(&sema_write);
+
+    unsigned size_cpy = size;
+    //write to console
+    if(fd==1)
     {
-      sema_up(&sema_write);
-      return 0;
-    }    
-
-    //if(size<=200)
-    //{
-      putbuf(buffer, size);
-
-      sema_up(&sema_write);
-      return size;
-   // }
-
-   /* int i;
-    for(i = 0; i<size; i+=200)
-    {
-      if(size_cpy <= 200)
+      // if there is nothing to write
+      if(size == 0 || buffer == NULL)
       {
-        putbuf(buffer + i, size_cpy);
-      }
+        sema_up(&sema_write);
+        return 0;
+      }    
 
-      putbuf(buffer + i, 200);
+      //if(size<=200)
+      //{
+        putbuf(buffer, size);
 
-      size_cpy = size_cpy - 200;
-     
-    }*/
+        sema_up(&sema_write);
+        return size;
+     // }
 
-  }
-  if(fd != 0 && fd != 1)
-  {
-    //writing to file
+     /* int i;
+      for(i = 0; i<size; i+=200)
+      {
+        if(size_cpy <= 200)
+        {
+          putbuf(buffer + i, size_cpy);
+        }
+
+        putbuf(buffer + i, 200);
+
+        size_cpy = size_cpy - 200;
+       
+      }*/
+
+    }
+    if(fd != 0 && fd != 1)
+    {
+      //writing to file
+      sema_up(&sema_write);
+      struct thread *cur = thread_current();
+      //printf("File desctriptor is: %d\n", fd);
+      return file_write (cur->file_pointers[fd], buffer, size);
+
+    }
+
+    // let others write now
     sema_up(&sema_write);
-    struct thread *cur = thread_current();
-    //printf("File desctriptor is: %d\n", fd);
-    return file_write (cur->file_pointers[fd], buffer, size);
-
+   
+    return size;
   }
-
-  // let others write now
-  sema_up(&sema_write);
-
-  return size;
+  // bad fd
+  return 0;
 }
 
 
@@ -392,13 +424,15 @@ seek (int fd , unsigned position)
 {
   if((fd>=2 && fd<=thread_current()->fd_index) || position>=0)
     file_seek (thread_current()->file_pointers[fd], position);
+  else
+    thread_exit();
 }
 
 unsigned 
 tell (int fd)
 {
   if(fd<2 || fd>thread_current()->fd_index)
-    return 0;
+    thread_exit();
 
   return file_tell (thread_current()->file_pointers[fd]); // maybe plus 1
 }
@@ -408,4 +442,6 @@ close (int fd)
 {
   if(fd>=2 && fd<=thread_current()->fd_index)
     file_close (thread_current()->file_pointers[fd]); 
+  else
+    thread_exit();
 }

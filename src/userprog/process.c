@@ -131,10 +131,10 @@ process_wait (tid_t child_tid)
       sema_up(&t-> wait_block);    //unblocking so child can finish
 
       // RACE CONDITION!!!!!??????!!!!!???? 
-      sema_up(&t->test);
+      sema_down(&t->test);
       if(t->alive != 1)  //if child is dead, return immediately
         return current->exit_status;
-      sema_down(&t->test);
+      sema_up(&t->test);
       
       sema_down(&current->sema_parent_block);  // block parent so that child may finish
       return current->exit_status;
@@ -401,7 +401,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   file_close (file);
   return success;
 }
-
+
 /* load() helpers. */
 
 static bool install_page (void *upage, void *kpage, bool writable);
