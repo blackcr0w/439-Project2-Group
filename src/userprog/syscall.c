@@ -68,10 +68,8 @@ syscall_handler (struct intr_frame *f)
       break;
 
     case SYS_EXEC:  //2
-
-    // printf("%p\n\n\n", *(esp+1));
-      bad_pointer(esp+1);
-      cmd_line = *(esp+1); // gets first argument
+      bad_pointer(*(esp+1));
+      cmd_line = *(esp+1); // check buffer
       f->eax = exec(cmd_line);
       break;
 
@@ -132,7 +130,6 @@ syscall_handler (struct intr_frame *f)
       break;
 
     case SYS_READ:   
-
       bad_pointer(esp+1);
       bad_pointer(*(esp+2));
       bad_pointer(esp+3);
@@ -147,6 +144,7 @@ syscall_handler (struct intr_frame *f)
       bad_pointer(esp+1);
       bad_pointer(*(esp+2));
       bad_pointer(esp+3);
+      
       fd = *(esp+1);
       buf = *(esp+2);
       size = *(esp+3); 
@@ -164,7 +162,7 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_TELL:
       bad_pointer(esp+1);
-      f->eax = tell(*(esp+1));
+      f->eax = tell(*(esp+1));  
       break;
 
     case SYS_CLOSE:
@@ -172,34 +170,45 @@ syscall_handler (struct intr_frame *f)
       close (*(esp+1));
       break;
 
-		default: 
+		default:  
 			thread_exit();
 			break;
 	}
 	
 }
 
+// helper to check if pointer is mapped, !null and in the user address space
 void
-bad_pointer(int *esp)
+bad_pointer(int *esp) 
 {
-// printf("got to bad pointer\n%p\n\n\n", esp);
+// printf("check if %p is a bad pointer...\n\n\n\n", esp);
   // if(*esp == 0x20101234)
     // ASSERT(0);
     // printf("i\n\n\n\n got here");
 
   struct thread *cur = thread_current();
- // printf("ESP is: %p\n", esp);
+  
+  // check if esp is a valid ptr at all
   if(esp == NULL) //need to check for unmapped
   {
-     // printf("\n\n\nBAAAD SPOT1\n\n\n");
+    // printf("\n\n\nBAAAD SPOT1\n\n\n");
     printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
     thread_exit();
   }
-      
-  if(pagedir_get_page(cur->pagedir, esp) == NULL || is_kernel_vaddr(esp))
+
+  // make sure esp is in the user address space
+  if(is_kernel_vaddr(esp))
   {
+    // printf("\n\n\nBAAAD SPOT2\n\n\n");
     printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
-     // printf("\n\n\nBAAAD SPOT2\n\n\n");
+    thread_exit();
+  }
+    
+  // check if esp is unmapped
+  if(pagedir_get_page(cur->pagedir, esp) == NULL)
+  {
+    // printf("\n\n\nBAAAD SPOT3\n\n\n");
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
     thread_exit();
   }
 
@@ -227,7 +236,7 @@ halt (void)
   shutdown_power_off();
 } 
 
-void 
+void  
 exit (int status)
 {
   struct thread *cur = thread_current();
@@ -237,36 +246,32 @@ exit (int status)
   char *save_ptr; // for spliter  
   // token = strtok_r (cur->name, " ", &save_ptr);
 
-  //  printf("GOT TO exit");
+  // printf("GOT TO exit");
   // printf("\n\nNAME: %s\n\n", cur->name);
   printf ("%s: exit(%d)\n", strtok_r(cur->name, " ", &save_ptr), status); 
   thread_exit();
 }
- 
+  
 // execute the given command line
 int 
 exec (const char *cmd_line)
-{
+{ //printf("\n\nexec cmd_line: %s\n\n\n\n", cmd_line);
 
+  // how to actually do the if statement? How to tell if the process exists?
+  /*if(strcmp(cmd_line, "no-such-file")==0) {
+    // printf("heyyyyyyyyy\n\n\n"); 
+    return -1;
+  }*/
   //printf("\n\n\n\n\nEXEC IS HERE\n\n\n\n");
   struct thread *cur = thread_current();
 
-
-  char s[100];
-  strlcpy (s, cmd_line, strlen(cmd_line)+1);  //putting cmdline in s
-
-  char *save_ptr; // for spliter
-  char * file_name = strtok_r(s, " ", &save_ptr);
-
   // get string of args and file name, pass into execute
-  int tid = process_execute(file_name);
-
-  sema_down(&(cur->exec_block));
+  int tid = process_execute(cmd_line);
 
   // wait for child to return
   if(tid) // if successfully waited
     return tid;
-  else        // if child erred on wait
+  else    // if child erred on wait
     return -1;  
 }
 
@@ -296,7 +301,6 @@ remove (const char *file)
 int 
 open (const char *file)
 {
-
   struct thread *cur = thread_current();
   cur->file_pointers[cur->fd_index] = filesys_open(file);
 
@@ -319,31 +323,30 @@ filesize (int fd)
 int 
 read (int fd, void *buffer, unsigned size)
 {
-
- // printf("read fd: %d\n\n\n", fd);
+  // printf("read fd: %d\n\n\n", fd);
+  
   struct thread *cur = thread_current();
   //sema_down(&sema_write);
   //printf("\nsize: %d\n", size); 
   //error checking
   //char * reading = NULL;
-  if(fd ==0) //read from keyboard 
+  
+  // read from keyboard
+  if(fd == 0)
   {
     int i;
     for(i = 0; i < size; i++)
     {
-  //    *(buffer+i) = input_getc();
+      // cast to char
+      char * c_ptr = (char *) buffer;
+      *(c_ptr+i) = input_getc();
     }
     return size;
   }
-  
-  if(fd > 0 && fd <= cur->fd_index && buffer != NULL && size >= 0)
-  {
-    int ret = file_read(cur->file_pointers[fd], buffer, size);
 
-    //printf("\nfd: %d\n", fd);
-    // printf("\nret: %d\n", ret);
-    return ret;
-  }
+  // if fd is valid, read the file  
+  if(fd > 1 && fd <= cur->fd_index && buffer != NULL && size >= 0)
+    return file_read(cur->file_pointers[fd], buffer, size);
 
   //sema_up(&sema_write);
   return -1;
@@ -353,12 +356,7 @@ int
 write (int fd, const void *buffer, unsigned size)
 {
 
- // if(fd < 0)
- //   thread_exit();
  // printf("We got to write!\n\n\n\n");
- // printf("File desctriptor at start of write: %d\n", fd);
-
- // prevent processes from writing mixed up
 
   struct thread * cur = thread_current();
   if(fd > 0 && fd <= cur->fd_index && buffer != NULL && size >= 0)
@@ -397,7 +395,7 @@ write (int fd, const void *buffer, unsigned size)
         size_cpy = size_cpy - 200;
        
       }*/
-
+ 
     }
     if(fd != 0 && fd != 1)
     {
@@ -434,14 +432,24 @@ tell (int fd)
   if(fd<2 || fd>thread_current()->fd_index)
     thread_exit();
 
-  return file_tell (thread_current()->file_pointers[fd]); // maybe plus 1
+  return file_tell (thread_current()->file_pointers[fd]);
 }
 
 void 
 close (int fd)
 {
-  if(fd>=2 && fd<=thread_current()->fd_index)
-    file_close (thread_current()->file_pointers[fd]); 
-  else
-    thread_exit();
+  struct thread * t = thread_current();    // get the current thread
+  
+  // printf("fd: %d\nfd index: %d\n\n\n", fd, t->fd_index);
+  
+    if(fd>=2 && fd<=t->fd_index)          // check fd is valid
+  if(t->file_pointers[fd] != NULL)        // check that it is not closed
+    { 
+      // printf("did I get here...\n\n\n");
+      file_close (t->file_pointers[fd]);  // close the file
+     
+      // keep closed file from closing
+      t->file_pointers[fd] = NULL;
+    }
+  // else fail silently
 }

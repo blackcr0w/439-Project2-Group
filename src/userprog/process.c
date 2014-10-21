@@ -21,7 +21,7 @@
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
-// struct semaphore one_list;
+// struct semaphore exec_block;
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -30,11 +30,11 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
-
-  //printf("\n\n\nprocess_execute\n\n\n");
+  //printf("\n\n\nprocess_execute\n\n\n"); 
 
   char *fn_copy;
   tid_t tid;
+  struct thread * t = thread_current();
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
@@ -43,19 +43,30 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+  char s[100];
+  strlcpy (s, file_name, strlen(file_name)+1);  //putting cmdline in s
+
+  char *save_ptr; // for spliter
+  char * file = strtok_r(s, " ", &save_ptr);
+
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (file, PRI_DEFAULT, start_process, fn_copy);
+
+  // wait for load to finish (protect the tid!)
+  sema_down(&(t->exec_block));
+
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
+
 
   struct thread *child = get_thread_tid(tid);
 
   //child->proc_name = file_name;
   if(!child == NULL)
   {
-    child->parent = thread_current();
+    child->parent = t;
      // populate the children of the thread
-    list_push_front (&thread_current()->children, &child->child_elem);
+    list_push_front (&t->children, &child->child_elem);
   }
 
   return tid;
@@ -307,10 +318,11 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   /* Open executable file. */
   file = filesys_open (real_file_name); //fix
-  if (file == NULL) 
+  printf("file: %p\nreal_file_name: %s\n", file, real_file_name);
+  if (file == NULL || file==0) 
     {
-      printf ("load: %s: open failed\n", real_file_name);
-      goto done; 
+      printf ("\n\n\nload: %s: open failed\n", real_file_name);
+      goto done;  
     }
 
   /* Read and verify executable header. */
@@ -394,7 +406,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   success = true;
 
-   sema_up(&t->parent->exec_block);  //sema up on parents blocking on exec semaphore
+  sema_up(&t->parent->exec_block);  //sema up on parents blocking on exec semaphore
 
  done:
   /* We arrive here whether the load is successful or not. */
