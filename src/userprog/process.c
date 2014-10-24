@@ -30,11 +30,9 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
-  //printf("\n\n\nprocess_execute\n\n\n"); 
-
   char *fn_copy;
   tid_t tid;
-  struct thread * t = thread_current();
+  struct thread * cur = thread_current();
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
@@ -53,7 +51,6 @@ process_execute (const char *file_name)
   tid = thread_create (file, PRI_DEFAULT, start_process, fn_copy);
 
   // wait for load to finish (protect the tid!)
-  sema_down(&(t->exec_block));
 
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
@@ -61,12 +58,20 @@ process_execute (const char *file_name)
 
   struct thread *child = get_thread_tid(tid);
 
+  //child -> running = 1;
+
   //child->proc_name = file_name;
   if(!child == NULL)
   {
-    child->parent = t;
+    child->parent = cur;
      // populate the children of the thread
-    list_push_front (&t->children, &child->child_elem);
+    list_push_front (&cur->children, &child->child_elem);
+  }
+  sema_down(&(cur->exec_block));
+
+  if(child->load == 0)  //if load not successful
+  {
+    return -1;
   }
 
   return tid;
@@ -91,7 +96,11 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) 
-    thread_exit ();
+  {
+    thread_current()->load = 0;
+    thread_exit();
+  }
+
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -126,42 +135,29 @@ process_wait (tid_t child_tid)
   for (current_child = list_begin (&current -> children); current_child != list_end (&current -> children);
             current_child = list_next (current_child))
   {
-
     struct thread *t = list_entry (current_child, struct thread, child_elem);
     tid_t tid = t -> tid;
 
-   /* if(current_child == list_end (&current -> children))
-    { 
-  
-       r   eturn -1;
-    }*/
-  
     if(tid == child_tid) // if found direct child
     {
       list_remove(&t->child_elem);
-      sema_up(&t-> wait_block);    //unblocking so child can finish
-
-      // RACE CONDITION!!!!!??????!!!!!???? 
-      sema_down(&t->test);
-      if(t->alive != 1)  //if child is dead, return immediately
-        return current->exit_status;
-      sema_up(&t->test);
       
       sema_down(&current->sema_parent_block);  // block parent so that child may finish
-      return current->exit_status;
-    }
+      int stat = t->exit_status;               // get status of child before they exit
+      sema_up(&t-> wait_block);    //unblocking so child can finish
+  
+      return stat;      
+    }  
   }
     return -1;
-}
-
+} 
+ 
 /* Free the current process's resources. */
 void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-
-    cur->alive = 0;
 
     struct list_elem *set_null;
 
@@ -173,13 +169,10 @@ process_exit (void)
       child->parent = NULL;
     }
 
-    if(cur->parent != NULL)
-    {
+    if(cur->parent != NULL)     //if parent not dead tell them that this thread is about to die
       sema_up(&cur-> parent -> sema_parent_block);
-    }
 
       sema_down(&cur-> wait_block);  //blocking so parent can get info first
-
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -197,8 +190,6 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
-
-
 }
 
 /* Sets up the CPU for running user code in the current
@@ -314,16 +305,20 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   strlcpy (s, file_name, strlen(file_name)+1);  //putting cmdline in s
 
-  char * real_file_name = strtok_r (s, " ", &save_ptr); 
+  char * real_file_name = strtok_r (s, " ", &save_ptr);  
 
   /* Open executable file. */
   file = filesys_open (real_file_name); //fix
-  printf("file: %p\nreal_file_name: %s\n", file, real_file_name);
+
+  thread_current()->save = file;
+
   if (file == NULL || file==0) 
     {
-      printf ("\n\n\nload: %s: open failed\n", real_file_name);
+      printf ("load: %s: open failed\n", real_file_name);     
       goto done;  
     }
+
+  file_deny_write(file);
 
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
@@ -406,11 +401,11 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   success = true;
 
-  sema_up(&t->parent->exec_block);  //sema up on parents blocking on exec semaphore
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+  sema_up(&t->parent->exec_block);  //sema up on parents blocking on exec semaphore
+ 
   return success;
 }
 

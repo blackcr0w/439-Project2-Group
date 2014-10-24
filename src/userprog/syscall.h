@@ -6,7 +6,8 @@
 
 // define pid_t
 typedef int pid_t;
-
+ 
+void close_files(void);
 void bad_pointer(int* esp);
 void syscall_init (void);
 void halt (void);

@@ -537,8 +537,9 @@ init_thread (struct thread *t, const char *name, int priority)
 
     t -> parent = NULL;
     t -> exit_status = -1;
-    t -> alive = 1;
+
     t -> fd_index = 2;
+    t -> load = 1;
 
     int *file_pointers[130] = {NULL};
 
@@ -552,6 +553,7 @@ init_thread (struct thread *t, const char *name, int priority)
     
     sema_init(&t->sema_parent_block, 0);
     sema_init(&t->exec_block, 0);
+    sema_init(&t ->syscall_block, 1);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

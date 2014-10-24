@@ -4,12 +4,51 @@
 #include "userprog/gdt.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "threads/vaddr.h"
+#include "userprog/syscall.h"
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
+//static void bad_pointer(int* esp);
+
+//checks if bad pointer is passed in
+/*static void
+bad_pointer(int *esp) 
+{
+ //printf("check if %p is a bad pointer...\n", esp);
+  // if(*esp == 0x20101234)
+    // ASSERT(0);
+    // printf("i\n\n\n\n got here");
+
+  struct thread *cur = thread_current();
+  
+  // check if esp is a valid ptr at all
+  if(esp == NULL) //need to check for unmapped
+  {
+    // printf("\n\n\nBAAAD SPOT1\n\n\n");
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+    thread_exit();
+  }
+
+  // make sure esp is in the user address space
+  if(is_kernel_vaddr(esp))
+  {
+    // printf("\n\n\nBAAAD SPOT2\n\n\n");
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+    thread_exit();
+  }
+    
+  // check if esp is unmapped
+  if(pagedir_get_page(cur->pagedir, esp) == NULL)
+  {
+    // printf("\n\n\nBAAAD SPOT3\n\n\n");
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+    thread_exit();
+  }
+}*/
 
 /* Registers handlers for interrupts that can be caused by user
    programs.
@@ -134,6 +173,12 @@ page_fault (struct intr_frame *f)
      See [IA32-v2a] "MOV--Move to/from Control Registers" and
      [IA32-v3a] 5.15 "Interrupt 14--Page Fault Exception
      (#PF)". */
+
+  int * esp = f->esp;
+  bad_pointer(esp+1);
+  bad_pointer(*(esp+1));
+  //bad_pointer(esp+3);
+
   asm ("movl %%cr2, %0" : "=r" (fault_addr));
 
   /* Turn interrupts back on (they were only off so that we could
