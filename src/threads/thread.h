@@ -82,11 +82,6 @@ typedef int tid_t;
    only because they are mutually exclusive: only a thread in the
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
-// struct exit_status
-// {
-//   int stat;
-//   struct list_elem stat_elem;
-// };
 
 struct thread
 {
@@ -98,7 +93,7 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
  
-
+   
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -108,30 +103,25 @@ struct thread
     struct list locksAq;    //list of aquired locks that the thread has
     struct lock *lockWait;    //lock potentially waiting on
     struct semaphore *semWait; //for timer.c sleep
-    struct semaphore *test;    
     
+    //Jeff, Spencer, Dakota, and Cohen drove here
     /*      Project 2 elements         */
-    char * proc_name;
+    struct file *file_pointers[130]; // array of open files indexed by fd
+    int fd_index; // the index of the next file to be opened
 
-    struct file *file_pointers[130];
-    int fd_index;
-    struct list children;         //list of children
-    struct list_elem child_elem;   //list elem for child threads
-    struct semaphore sema_parent_block;  //for blocking parent 
-
-    struct semaphore exec_block;  //for blocking parent 
-
-    struct semaphore wait_block;  //blocks child from terminating
+    struct thread *parent; // defines relationship between thread and its parent
+    struct list children;         // list of this thread's children
+    struct list_elem child_elem;   // list elem for child threads
     
-    struct semaphore syscall_block;
+    struct semaphore sema_parent_block;  // for blocking parent 
+    struct semaphore exec_block;  // for blocking parent 
+    struct semaphore wait_block;  // blocks child from terminating too early
 
-    struct thread *parent;
+    struct file *save; // saves the file struct to call write_deny on
 
-    int exit_status;
- 
-    int load;
+    int exit_status; // the exit status of this thread
+    int load; // if the thread successfully loaded
 
-    struct file *save;
 
 /*      End of Project 2 elements         */
     struct condition *conWait;
@@ -185,5 +175,7 @@ int thread_get_load_avg (void);
 bool prioritycmp(const struct list_elem *a,
         const struct list_elem *b,
         void *aux);
+
+struct thread * get_thread_tid (tid_t tid);
 
 #endif /* threads/thread.h */

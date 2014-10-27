@@ -38,7 +38,7 @@ static struct lock tid_lock;
 
 /* Stack frame for kernel_thread(). */
 struct kernel_thread_frame 
-{
+{ 
     void *eip;                  /* Return address. */
     thread_func *function;      /* Function to call. */
     void *aux;                  /* Auxiliary data for function. */
@@ -92,8 +92,6 @@ thread_init (void)
     list_init (&ready_list);
     list_init (&all_list);
 
-
-
     /* Set up a thread structure for the running thread. */
     initial_thread = running_thread ();
     init_thread (initial_thread, "main", PRI_DEFAULT);
@@ -114,11 +112,11 @@ get_thread_tid (tid_t tid)
   {
     struct thread *t = list_entry (thread_elem, struct thread, allelem);
    
-    if(tid == t->tid)
+    if (tid == t->tid)
     {
       return t;
     }   
-  }
+  } 
 
   return NULL;
 } 
@@ -223,6 +221,11 @@ thread_create (const char *name, int priority,
     /* Initialize thread. */
     init_thread (t, name, priority);
     tid = t->tid = allocate_tid ();
+
+    //Spencer driving for this code
+    t -> parent = thread_current ();
+    list_push_back ( &thread_current ()->children, &t->child_elem );
+
 
     /* Prepare thread for first run by initializing its stack.
        Do this atomically so intermediate values for the 'stack' 
@@ -442,7 +445,7 @@ thread_get_recent_cpu (void)
     /* Not yet implemented. */
     return 0;
 }
-
+
 /* Idle thread.  Executes when no other thread is ready to run.
 
    The idle thread is initially put on the ready list by
@@ -534,8 +537,8 @@ init_thread (struct thread *t, const char *name, int priority)
     list_push_back (&all_list, &t->allelem);
 
     // thread starts not waiting
+    //Cohen Driving for this code
 
-    t -> parent = NULL;
     t -> exit_status = -1;
 
     t -> fd_index = 2;
@@ -544,16 +547,11 @@ init_thread (struct thread *t, const char *name, int priority)
     int *file_pointers[130] = {NULL};
 
     // intitialize children list of thread
+    list_init (&t -> children);
 
-    list_init(&t -> children);
-
-
-    sema_init(&t->wait_block, 0);
-    sema_init(&t->test, 1);
-    
-    sema_init(&t->sema_parent_block, 0);
-    sema_init(&t->exec_block, 0);
-    sema_init(&t ->syscall_block, 1);
+    sema_init (&t->wait_block, 0);
+    sema_init (&t->sema_parent_block, 0);
+    sema_init (&t->exec_block, 0);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

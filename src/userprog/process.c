@@ -21,18 +21,18 @@
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
-// struct semaphore exec_block;
-
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
    thread id, or TID_ERROR if the thread cannot be created. */
+
+// Dakota and Jeff driving here   
 tid_t
 process_execute (const char *file_name) 
 {
   char *fn_copy;
   tid_t tid;
-  struct thread * cur = thread_current();
+  struct thread * cur = thread_current ();
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
@@ -45,34 +45,24 @@ process_execute (const char *file_name)
   strlcpy (s, file_name, strlen(file_name)+1);  //putting cmdline in s
 
   char *save_ptr; // for spliter
-  char * file = strtok_r(s, " ", &save_ptr);
+  char * file = strtok_r (s, " ", &save_ptr);
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file, PRI_DEFAULT, start_process, fn_copy);
 
-  // wait for load to finish (protect the tid!)
-
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
 
+  struct thread *child = get_thread_tid (tid);
 
-  struct thread *child = get_thread_tid(tid);
-
-  //child -> running = 1;
-
-  //child->proc_name = file_name;
   if(!child == NULL)
   {
-    child->parent = cur;
-     // populate the children of the thread
-    list_push_front (&cur->children, &child->child_elem);
+    child->parent = cur;  // if the child exists set its parent to the current thread
   }
-  sema_down(&(cur->exec_block));
+  sema_down (&(cur->exec_block));
 
-  if(child->load == 0)  //if load not successful
-  {
+  if(child->load == 0)  // if load not successful
     return -1;
-  }
 
   return tid;
 }
@@ -97,8 +87,8 @@ start_process (void *file_name_)
   palloc_free_page (file_name);
   if (!success) 
   {
-    thread_current()->load = 0;
-    thread_exit();
+    thread_current ()->load = 0;
+    thread_exit ();
   }
 
 
@@ -110,7 +100,7 @@ start_process (void *file_name_)
      and jump to it. */
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
-}
+}  
 
 /* Waits for thread TID to die and returns its exit status.  If
    it was terminated by the kernel (i.e. killed due to an
@@ -121,58 +111,62 @@ start_process (void *file_name_)
 
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
+
+ // Cohen, Spencer, Jeff, and Dakota driving here  
 int
 process_wait (tid_t child_tid) 
 {
-  struct thread *current =  thread_current();
-   
-  struct list_elem *current_child;  // list elem for loop
-
+  struct thread *current =  thread_current ();
+ 
   // loop through the children of currently running thread
   if(list_empty(&current -> children))
+  {
     return -1;
+  } 
 
+  struct list_elem *current_child;  // list elem for loop
   for (current_child = list_begin (&current -> children); current_child != list_end (&current -> children);
             current_child = list_next (current_child))
   {
     struct thread *t = list_entry (current_child, struct thread, child_elem);
     tid_t tid = t -> tid;
-
     if(tid == child_tid) // if found direct child
     {
-      list_remove(&t->child_elem);
+      list_remove (&t->child_elem);
       
-      sema_down(&current->sema_parent_block);  // block parent so that child may finish
-      int stat = t->exit_status;               // get status of child before they exit
-      sema_up(&t-> wait_block);    //unblocking so child can finish
+      sema_down (&current->sema_parent_block);   // block parent so that child may finish
+      int stat = t->exit_status;                // get status of child before they exit
+      sema_up (&t-> wait_block);                 // unblocking so child can finish
   
-      return stat;      
-    }  
+      return stat;
+    }
   }
     return -1;
 } 
  
 /* Free the current process's resources. */
+
+//Spencer and Cohen driving here
 void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
-    struct list_elem *set_null;
+  //setting all parents to NULL
+  struct list_elem *set_null;
+  for (set_null = list_begin (&cur->children); set_null != list_end (&cur->children);
+          set_null = list_next (set_null))
+  {
+    struct thread *child = list_entry (set_null, struct thread, child_elem);
+    child->parent = NULL;
+  }
 
-    //setting all parents to NULL
-    for (set_null = list_begin (&cur->children); set_null != list_end (&cur->children);
-            set_null = list_next (set_null))
-    {
-      struct thread *child = list_entry (set_null, struct thread, child_elem);
-      child->parent = NULL;
-    }
-
-    if(cur->parent != NULL)     //if parent not dead tell them that this thread is about to die
-      sema_up(&cur-> parent -> sema_parent_block);
-
-      sema_down(&cur-> wait_block);  //blocking so parent can get info first
+  if(cur->parent != NULL)     //if parent not dead tell them that this thread is about to die
+  {
+    sema_up (&cur-> parent -> sema_parent_block);
+    sema_down (&cur-> wait_block);  //blocking so parent can get info first
+  }
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -207,7 +201,7 @@ process_activate (void)
      interrupts. */
   tss_update ();
 }
-
+
 /* We load ELF binaries.  The following definitions are taken
    from the ELF specification, [ELF1], more-or-less verbatim.  */
 
@@ -297,20 +291,22 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   process_activate ();
 
+  //Dakota driving here
+
   char *token, *save_ptr; // for spliter
 
   char * real;
 
   char s[100]; //setting up s
 
-  strlcpy (s, file_name, strlen(file_name)+1);  //putting cmdline in s
+  strlcpy (s, file_name, strlen (file_name)+1);  //putting cmdline in s
 
   char * real_file_name = strtok_r (s, " ", &save_ptr);  
 
   /* Open executable file. */
   file = filesys_open (real_file_name); //fix
 
-  thread_current()->save = file;
+  thread_current ()->save = file;
 
   if (file == NULL || file==0) 
     {
@@ -401,8 +397,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   success = true;
 
-
- done:
+  done:
   /* We arrive here whether the load is successful or not. */
   sema_up(&t->parent->exec_block);  //sema up on parents blocking on exec semaphore
  
@@ -519,6 +514,8 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
+
+// Spencer and Dakota driving for this method
 static bool
 setup_stack (void **esp, char *file_name) 
 {
@@ -528,7 +525,7 @@ setup_stack (void **esp, char *file_name)
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+      success = install_page ( ((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true );
       if (success)
         *esp = PHYS_BASE; // temporary 
       else
@@ -537,27 +534,27 @@ setup_stack (void **esp, char *file_name)
 
   // our code starts
   char* myEsp = (char*) *esp;
-
   char* n_word = NULL;
-
-  char *file_cpy = file_name;  // copying cmdline
-
-  char *token, *save_ptr; // for spliter
-
+  char *file_cpy = file_name;   // copying cmdline
+  char *token, *save_ptr;       // for spliter
   char s[strlen(file_cpy)];
 
-  strlcpy(s, file_cpy, strlen(file_cpy)+1);  //moves cmdline copy into s, add 1 for null
+  strlcpy(s, file_cpy, strlen (file_cpy)+1);  //moves cmdline copy into s, add 1 for null
 
   int count = -1;  //tracking number of arguments
 
-  char *args[100] = {NULL};
-  char *whereArgs[100] = {NULL};
+  // limiting number of characters on stack to 130
+  char *args[130] = {NULL};
+  char *whereArgs[130] = {NULL};
 
   for (token = strtok_r (s, " ", &save_ptr); token != NULL;
         token = strtok_r (NULL, " ", &save_ptr))
   {
     count++; // how many arguments
-    args[count] = token; // token  
+    args[count] = token; // token 
+
+    // if stack limit has been surpassed
+    ASSERT(count<=130); 
   }
 
   int count_save = count;
@@ -568,7 +565,7 @@ setup_stack (void **esp, char *file_name)
     myEsp--;
     *myEsp = NULL;  // store end nullcharacter on stack and decrement stack
 
-    for(i = strlen(args[count]+1); i>=0; i--)  // loops through argument characters
+    for(i = strlen (args[count]+1); i>=0; i--)  // loops through argument characters
     {
       myEsp--;
       *myEsp = args[count][i]; // store the character on stack and decrement stack
