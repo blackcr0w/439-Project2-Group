@@ -1,0 +1,15 @@
+FAIL
+Kernel panic in run: PANIC at ../../userprog/pagedir.c:61 in lookup_page(): assertion `pd != NULL' failed.
+Call stack: 0xc0028772 0xc002b2a4 0xc002b5d2 0xc002c1de 0xc002bc77 0xc0021bbe 0xc0021cef 0xc002e27d 0xc002a821 0xc002027d 0xc0020984
+Translation of call stack:
+0xc0028772: debug_panic (.../../lib/kernel/debug.c:38)
+0xc002b2a4: lookup_page (.../../userprog/pagedir.c:64)
+0xc002b5d2: pagedir_get_page (...../userprog/pagedir.c:133)
+0xc002c1de: bad_pointer (...../userprog/syscall.c:151)
+0xc002bc77: page_fault (.../userprog/exception.c:179)
+0xc0021bbe: intr_handler (..../threads/interrupt.c:367)
+0xc0021cef: intr_entry (threads/intr-stubs.S:38)
+0xc002e27d: get_new_frame (...build/../../vm/frame.c:67)
+0xc002a821: process_execute (.../../userprog/process.c:43)
+0xc002027d: run_task (.../../../threads/init.c:293)
+0xc0020984: run_actions (.../../../threads/init.c:346)

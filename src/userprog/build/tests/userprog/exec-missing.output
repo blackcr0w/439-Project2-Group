@@ -1,0 +1,35 @@
+Copying tests/userprog/exec-missing to scratch partition...
+qemu -hda /tmp/V4g0wL9Ykz.dsk -m 4 -net none -nographic -monitor null
+PiLo hda1
+Loading.........
+Kernel command line: -q -f extract run exec-missing
+Pintos booting with 4,096 kB RAM...
+383 pages available in kernel pool.
+383 pages available in user pool.
+Calibrating timer...  12,684,800 loops/s.
+hda: 5,040 sectors (2 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 147 sectors (73 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 100 sectors (50 kB), Pintos scratch (22)
+filesys: using hda2
+scratch: using hda3
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'exec-missing' into the file system...
+Erasing ustar archive...
+Executing 'exec-missing':
+(exec-missing) begin
+load: no-such-file: open failed
+(exec-missing) exec("no-such-file"): -1
+(exec-missing) end
+exec-missing: exit(0)
+Execution of 'exec-missing' complete.
+Timer: 267 ticks
+Thread: 0 idle ticks, 266 kernel ticks, 1 user ticks
+hda2 (filesys): 80 reads, 204 writes
+hda3 (scratch): 99 reads, 2 writes
+Console: 978 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...
