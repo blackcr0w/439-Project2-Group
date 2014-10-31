@@ -10,7 +10,7 @@
 #include "threads/loader.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
-
+ 
 /* Page allocator.  Hands out memory in page-size (or
    page-multiple) chunks.  See malloc.h for an allocator that
    hands out smaller chunks.
@@ -24,7 +24,7 @@
    By default, half of system RAM is given to the kernel pool and
    half to the user pool.  That should be huge overkill for the
    kernel pool, but that's just fine for demonstration purposes. */
-
+ 
 /* A memory pool. */
 struct pool
   {

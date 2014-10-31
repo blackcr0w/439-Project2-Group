@@ -1,3 +1,5 @@
+#include "vm/frame.h"
+
 #include "threads/init.h"
 #include <console.h>
 #include <debug.h>
@@ -36,6 +38,7 @@
 #include "devices/ide.h"
 #include "filesys/filesys.h"
 #include "filesys/fsutil.h"
+
 #endif
 
 /* Page directory with kernel mappings only. */
@@ -79,7 +82,7 @@ main (void)
   char **argv;
 
   /* Clear BSS. */  
-  bss_init ();
+  bss_init (); 
 
   /* Break command line into arguments and parse options. */
   argv = read_command_line ();
@@ -95,6 +98,8 @@ main (void)
           init_ram_pages * PGSIZE / 1024);
 
   /* Initialize memory system. */
+  init_page_table (); // initialize the page table
+  init_frame_table ();//frame init data structure
   palloc_init (user_page_limit);
   malloc_init ();
   paging_init ();
