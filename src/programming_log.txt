@@ -301,6 +301,7 @@ Jeff, 30 minutes
 Cohen, 30 minutes
 Dakota 15 minutes
 
+<<<<<<< HEAD
 10/24 2:00 pm -12:00pm  Dakota, Spencer, Jeff, Cohen 10 hours
 Driver Order and Time Length
 Spencer, 30 minutes
@@ -324,3 +325,6 @@ Cohen,  30 minutes
 Dakota, 30 minutes
 Cohen, 30 minutes
 
+=======
+10/24 friday
+>>>>>>> 415192df95a79e6e94cc710c5cff8b5b131746eb
