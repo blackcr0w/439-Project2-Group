@@ -91,7 +91,7 @@ get_new_frame (void * upage)
 	//	evict_page();
 	}
 
-	//bool success = pagedir_set_page (thread_current()->pagedir, upage, palloc_address, 1); // should we make writable???   //maps the upage to kpage
+	bool success = pagedir_set_page (thread_current()->pagedir, upage, palloc_address, 1); // should we make writable???   //maps the upage to kpage
 	//problem here hanging???
 
 	//ASSERT(success); // assuming that the mapping is successful
