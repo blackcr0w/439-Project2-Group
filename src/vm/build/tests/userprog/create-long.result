@@ -1,1 +1,13 @@
-PASS
+FAIL
+Kernel panic in run: PANIC at ../../threads/thread.c:322 in thread_current(): assertion `is_thread (t)' failed.
+Call stack: 0xc0028772 0xc0020b15 0xc00229ab 0xc002a4a8 0xc002a643 0xc0026f47 0xc00233bf 0xc0023467 0xc0020629
+Translation of call stack:
+0xc0028772: debug_panic (.../../lib/kernel/debug.c:38)
+0xc0020b15: thread_current (..../../threads/thread.c:323)
+0xc00229ab: lock_held_by_current_thread (...../../threads/synch.c:246)
+0xc002a4a8: acquire_console (..../lib/kernel/console.c:92)
+0xc002a643: vprintf (.../lib/kernel/console.c:131)
+0xc0026f47: printf (...uild/../../lib/stdio.c:89)
+0xc00233bf: init_pool (..../../threads/palloc.c:167)
+0xc0023467: palloc_init (...../../threads/palloc.c:60)
+0xc0020629: main (.../../../threads/init.c:104)

@@ -5,4 +5,4 @@ vm/frame.o: ../../vm/frame.c ../../threads/thread.h ../../lib/debug.h \
   ../../threads/palloc.h ../../threads/switch.h ../../threads/synch.h \
   ../../threads/vaddr.h ../../threads/loader.h ../../userprog/process.h \
   ../../threads/thread.h ../../vm/frame.h ../../vm/page.h \
-  ../../threads/malloc.h
+  ../../lib/kernel/hash.h ../../lib/kernel/list.h ../../threads/malloc.h

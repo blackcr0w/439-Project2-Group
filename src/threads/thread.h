@@ -122,9 +122,11 @@ struct thread
     int exit_status; // the exit status of this thread
     int load; // if the thread successfully loaded
 
+    struct condition *conWait;
 
 /*      End of Project 2 elements         */
-    struct condition *conWait;
+    struct hash *page_table;
+
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

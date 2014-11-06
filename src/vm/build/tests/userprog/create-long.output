@@ -1,37 +1,17 @@
 Copying tests/userprog/create-long to scratch partition...
-qemu -hda /tmp/04Ui06UUKG.dsk -m 4 -net none -nographic -monitor null
+qemu -hda /tmp/OJ1yawpIK9.dsk -m 4 -net none -nographic -monitor null
 PiLo hda1
 Loading.........
 Kernel command line: -q -f extract run create-long
 Pintos booting with 4,096 kB RAM...
-383 pages available in kernel pool.
-383 pages available in user pool.
-Calibrating timer...  209,510,400 loops/s.
-hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
-hda1: 147 sectors (73 kB), Pintos OS kernel (20)
-hda2: 4,096 sectors (2 MB), Pintos file system (21)
-hda3: 101 sectors (50 kB), Pintos scratch (22)
-hda4: 8,192 sectors (4 MB), Pintos swap (23)
-filesys: using hda2
-scratch: using hda3
-swap: using hda4
-Formatting file system...done.
-Boot complete.
-Extracting ustar archive from scratch device into file system...
-Putting 'create-long' into the file system...
-Erasing ustar archive...
-Executing 'create-long':
-(create-long) begin
-(create-long) create("x..."): 0
-(create-long) end
-create-long: exit(0)
-Execution of 'create-long' complete.
-Timer: 238 ticks
-Thread: 0 idle ticks, 233 kernel ticks, 5 user ticks
-hda2 (filesys): 64 reads, 210 writes
-hda3 (scratch): 100 reads, 2 writes
-hda4 (swap): 0 reads, 0 writes
-Console: 1027 characters output
+Kernel PANIC at ../../threads/thread.c:322 in thread_current(): assertion `is_thread (t)' failed.
+Call stack: 0xc0028772 0xc0020b15 0xc00229ab 0xc002a4a8 0xc002a643 0xc0026f47 0xc00233bf 0xc0023467 0xc0020629.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 0 ticks
+Thread: 0 idle ticks, 0 kernel ticks, 0 user ticks
+Console: 517 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...

@@ -1,1 +1,14 @@
-PASS
+FAIL
+Kernel panic in run: PANIC at ../../lib/kernel/list.c:171 in list_insert(): assertion `is_interior (before) || is_tail (before)' failed.
+Call stack: 0xc0028772 0xc0028898 0xc0028b4f 0xc0022df6 0xc0022ec8 0xc002329b 0xc0023795 0xc002a43b 0xc002e2a1 0xc0020617
+Translation of call stack:
+0xc0028772: debug_panic (.../../lib/kernel/debug.c:38)
+0xc0028898: is_tail (..../../lib/kernel/list.c:56)
+0xc0028b4f: list_push_back (.../../lib/kernel/list.c:220)
+0xc0022df6: sema_down (.../../../threads/synch.c:72)
+0xc0022ec8: lock_acquire (...../../threads/synch.c:200)
+0xc002329b: palloc_get_multiple (...../../threads/palloc.c:81)
+0xc0023795: malloc (..../../threads/malloc.c:111)
+0xc002a43b: hash_init (..../../lib/kernel/hash.c:31)
+0xc002e2a1: init_frame_table (...build/../../vm/frame.c:77)
+0xc0020617: main (.../../../threads/init.c:103)

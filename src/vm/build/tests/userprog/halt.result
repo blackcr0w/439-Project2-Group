@@ -1,1 +1,8 @@
-PASS
+FAIL
+Kernel panic in run: PANIC at ../../lib/kernel/hash.c:31 in hash_init(): assertion `0' failed.
+Call stack: 0xc0028772 0xc0029eee 0xc002e273 0xc0020617
+Translation of call stack:
+0xc0028772: debug_panic (.../../lib/kernel/debug.c:38)
+0xc0029eee: find_elem (.../../lib/kernel/hash.c:318)
+0xc002e273: init_frame_table (...build/../../vm/frame.c:77)
+0xc0020617: main (.../../../threads/init.c:103)

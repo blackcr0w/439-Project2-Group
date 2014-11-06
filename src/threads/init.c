@@ -98,12 +98,12 @@ main (void)
           init_ram_pages * PGSIZE / 1024);
 
   /* Initialize memory system. */
-  init_page_table (); // initialize the page table
-  init_frame_table ();//frame init data structure
+  //init_page_table (); // initialize the page table
   palloc_init (user_page_limit);
   malloc_init ();
   paging_init ();
 
+  init_frame_table ();//frame init data structure
   /* Segmentation. */
 #ifdef USERPROG
   tss_init ();

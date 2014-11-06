@@ -12,43 +12,6 @@ static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
-//static void bad_pointer(int* esp);
-
-//checks if bad pointer is passed in
-/*static void
-bad_pointer(int *esp) 
-{
- //printf("check if %p is a bad pointer...\n", esp);
-  // if(*esp == 0x20101234)
-    // ASSERT(0);
-    // printf("i\n\n\n\n got here");
-
-  struct thread *cur = thread_current();
-  
-  // check if esp is a valid ptr at all
-  if(esp == NULL) //need to check for unmapped
-  {
-    // printf("\n\n\nBAAAD SPOT1\n\n\n");
-    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
-    thread_exit();
-  }
-
-  // make sure esp is in the user address space
-  if(is_kernel_vaddr(esp))
-  {
-    // printf("\n\n\nBAAAD SPOT2\n\n\n");
-    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
-    thread_exit();
-  }
-    
-  // check if esp is unmapped
-  if(pagedir_get_page(cur->pagedir, esp) == NULL)
-  {
-    // printf("\n\n\nBAAAD SPOT3\n\n\n");
-    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
-    thread_exit();
-  }
-}*/
 
 /* Registers handlers for interrupts that can be caused by user
    programs.

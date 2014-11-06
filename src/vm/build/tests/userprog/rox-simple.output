@@ -1,5 +1,5 @@
 Copying tests/userprog/rox-simple to scratch partition...
-qemu -hda /tmp/GGl6PhwE9H.dsk -m 4 -net none -nographic -monitor null
+qemu -hda /tmp/JMcZG1rKrD.dsk -m 4 -net none -nographic -monitor null
 PiLo hda1
 Loading.........
 Kernel command line: -q -f extract run rox-simple
@@ -21,17 +21,19 @@ Extracting ustar archive from scratch device into file system...
 Putting 'rox-simple' into the file system...
 Erasing ustar archive...
 Executing 'rox-simple':
-Kernel PANIC at ../../userprog/pagedir.c:61 in lookup_page(): assertion `pd != NULL' failed.
-Call stack: 0xc0028772 0xc002b2a4 0xc002b5d2 0xc002c1de 0xc002bc77 0xc0021bbe 0xc0021cef 0xc002e27d 0xc002a821 0xc002027d 0xc0020984.
-The `backtrace' program can make call stacks useful.
-Read "Backtraces" in the "Debugging Tools" chapter
-of the Pintos documentation for more information.
-Timer: 261 ticks
-Thread: 0 idle ticks, 261 kernel ticks, 0 user ticks
-hda2 (filesys): 26 reads, 206 writes
+(rox-simple) begin
+(rox-simple) open "rox-simple"
+(rox-simple) read "rox-simple"
+(rox-simple) try to write "rox-simple"
+(rox-simple) end
+rox-simple: exit(0)
+Execution of 'rox-simple' complete.
+Timer: 231 ticks
+Thread: 0 idle ticks, 231 kernel ticks, 1 user ticks
+hda2 (filesys): 66 reads, 206 writes
 hda3 (scratch): 100 reads, 2 writes
 hda4 (swap): 0 reads, 0 writes
-Console: 1277 characters output
+Console: 1089 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...

@@ -38,9 +38,9 @@ process_execute (const char *file_name)
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
-  //fn_copy = palloc_get_page (0);
+  fn_copy = palloc_get_page (0);
 
-  fn_copy = get_new_frame ();
+  //fn_copy = get_new_frame ();
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
@@ -291,6 +291,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
+  
   if (t->pagedir == NULL) 
     goto done;
   process_activate ();
@@ -524,7 +525,8 @@ setup_stack (void **esp, char *file_name)
   uint8_t *kpage;
   bool success = false;
 
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+  kpage = get_new_frame (((uint8_t *) PHYS_BASE) - PGSIZE); // should probably be a variable???
+ // kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
       success = install_page ( ((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true );

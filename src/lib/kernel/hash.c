@@ -6,6 +6,7 @@
    See hash.h for basic information. */
 
 #include "hash.h"
+#include "vm/frame.h"
 #include "../debug.h"
 #include "threads/malloc.h"
 
@@ -30,7 +31,7 @@ hash_init (struct hash *h,
   h->buckets = malloc (sizeof *h->buckets * h->bucket_cnt);
   h->hash = hash;
   h->less = less;
-  h->aux = aux;
+  h->aux = aux; 
 
   if (h->buckets != NULL) 
     {
