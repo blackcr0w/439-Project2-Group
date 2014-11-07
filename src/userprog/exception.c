@@ -6,49 +6,14 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "userprog/syscall.h"
+#include "threads/palloc.h"
+#include "vm/frame.h"
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
-//static void bad_pointer(int* esp);
-
-//checks if bad pointer is passed in
-/*static void
-bad_pointer(int *esp) 
-{
- //printf("check if %p is a bad pointer...\n", esp);
-  // if(*esp == 0x20101234)
-    // ASSERT(0);
-    // printf("i\n\n\n\n got here");
-
-  struct thread *cur = thread_current();
-  
-  // check if esp is a valid ptr at all
-  if(esp == NULL) //need to check for unmapped
-  {
-    // printf("\n\n\nBAAAD SPOT1\n\n\n");
-    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
-    thread_exit();
-  }
-
-  // make sure esp is in the user address space
-  if(is_kernel_vaddr(esp))
-  {
-    // printf("\n\n\nBAAAD SPOT2\n\n\n");
-    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
-    thread_exit();
-  }
-    
-  // check if esp is unmapped
-  if(pagedir_get_page(cur->pagedir, esp) == NULL)
-  {
-    // printf("\n\n\nBAAAD SPOT3\n\n\n");
-    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
-    thread_exit();
-  }
-}*/
 
 /* Registers handlers for interrupts that can be caused by user
    programs.
@@ -174,10 +139,76 @@ page_fault (struct intr_frame *f)
      [IA32-v3a] 5.15 "Interrupt 14--Page Fault Exception
      (#PF)". */
 
+  void * va = f -> eip;
+
+
+  
+
   int * esp = f->esp;
-  bad_pointer(esp+1);
-  bad_pointer(*(esp+1));
+  bad_pointer (esp+1);
+  bad_pointer (*(esp+1));
   //bad_pointer(esp+3);
+
+  
+
+  //check if on swap?
+    //if its in swap and frames are full, evict some frame
+  //if in swap and not full just swap in
+  // if not on swap you need to palloc some new memory
+    //else if not on swap and full in frames need to evict and then place in
+  //map somewhere above ^
+
+
+
+  // check if on swap
+  // hash_find (thread_current() -> page_table, va);
+  struct page * p = page_lookup (va);
+  
+  // if not in frame (must be in swap)
+  if(!p -> in_frame_table)
+  {
+
+    void * kpage = palloc_get_page (PAL_USER);
+
+    // frame table is full, must evict
+    if(kpage==NULL)
+    {
+      // evict page (make a hole)
+      // remove page mapping
+      // put this in evict!!!!!!!!!!!!!!!!!!?! pagedir_clear_page (uint32_t *pd, void *upage)
+      evict_page ();
+    }
+
+    // not full, just put into frame table
+    else
+    {
+      // free mem we took earlier
+      palloc_free (kpage);
+    }
+
+    // make the new frame
+    get_new_frame (va);
+    
+    // update mapping
+    install_page (va, kpage, true);
+  
+  }
+
+  // if not in the swap table
+  // did not previously exist
+  else
+  {
+    void * kpage = palloc_get_page (PAL_USER);    
+
+    // if it's full
+    if(kpage==NULL)
+      evict_page();
+
+  }
+
+
+
+
 
   asm ("movl %%cr2, %0" : "=r" (fault_addr));
 
@@ -190,8 +221,10 @@ page_fault (struct intr_frame *f)
 
   /* Determine cause. */
   not_present = (f->error_code & PF_P) == 0;
-  write = (f->error_code & PF_W) != 0;
-  user = (f->error_code & PF_U) != 0;
+  write =       (f->error_code & PF_W) != 0;
+  user =        (f->error_code & PF_U) != 0;
+
+
 
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
@@ -206,4 +239,3 @@ page_fault (struct intr_frame *f)
 
   kill (f);
 }
-

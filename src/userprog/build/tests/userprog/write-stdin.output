@@ -1,0 +1,33 @@
+Copying tests/userprog/write-stdin to scratch partition...
+qemu -hda /tmp/bXZEiZqAou.dsk -m 4 -net none -nographic -monitor null
+PiLo hda1
+Loading.........
+Kernel command line: -q -f extract run write-stdin
+Pintos booting with 4,096 kB RAM...
+383 pages available in kernel pool.
+383 pages available in user pool.
+Calibrating timer...  29,235,200 loops/s.
+hda: 5,040 sectors (2 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 147 sectors (73 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 100 sectors (50 kB), Pintos scratch (22)
+filesys: using hda2
+scratch: using hda3
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'write-stdin' into the file system...
+Erasing ustar archive...
+Executing 'write-stdin':
+(write-stdin) begin
+(write-stdin) end
+write-stdin: exit(0)
+Execution of 'write-stdin' complete.
+Timer: 279 ticks
+Thread: 0 idle ticks, 278 kernel ticks, 1 user ticks
+hda2 (filesys): 62 reads, 204 writes
+hda3 (scratch): 99 reads, 2 writes
+Console: 899 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

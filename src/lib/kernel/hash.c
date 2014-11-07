@@ -6,8 +6,10 @@
    See hash.h for basic information. */
 
 #include "hash.h"
+#include "vm/frame.h"
 #include "../debug.h"
 #include "threads/malloc.h"
+#include "threads/thread.h"
 
 #define list_elem_to_hash_elem(LIST_ELEM)                       \
         list_entry(LIST_ELEM, struct hash_elem, list_elem)
@@ -30,7 +32,7 @@ hash_init (struct hash *h,
   h->buckets = malloc (sizeof *h->buckets * h->bucket_cnt);
   h->hash = hash;
   h->less = less;
-  h->aux = aux;
+  h->aux = aux; 
 
   if (h->buckets != NULL) 
     {
@@ -428,3 +430,18 @@ remove_elem (struct hash *h, struct hash_elem *e)
   list_remove (&e->list_elem);
 }
 
+/** Referenced from Pintos Page **/
+/* Returns the page containing the given virtual address,
+   or a null pointer if no such page exists. */
+struct page *
+page_lookup (const void *address)
+{
+  struct thread *t = thread_current();
+
+  struct page p;
+  struct hash_elem *e;
+
+  p.VA = address;
+  e = hash_find (t -> page_table, &p.page_elem);
+  return e != NULL ? hash_entry (e, struct page, page_elem) : NULL;
+}

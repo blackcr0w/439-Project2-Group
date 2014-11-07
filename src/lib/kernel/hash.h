@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include "list.h"
 
+
 /* Hash element. */
 struct hash_elem 
   {
@@ -77,6 +78,7 @@ struct hash_iterator
 /* Basic life cycle. */
 bool hash_init (struct hash *, hash_hash_func *, hash_less_func *, void *aux);
 void hash_clear (struct hash *, hash_action_func *);
+
 void hash_destroy (struct hash *, hash_action_func *);
 
 /* Search, insertion, deletion. */
@@ -101,3 +103,10 @@ unsigned hash_string (const char *);
 unsigned hash_int (int);
 
 #endif /* lib/kernel/hash.h */
+
+
+/** Referenced from Pintos Page **/
+/* Returns the page containing the given virtual address,
+   or a null pointer if no such page exists. */
+struct page *
+page_lookup (const void *address);

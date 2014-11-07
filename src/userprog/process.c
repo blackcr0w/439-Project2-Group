@@ -17,6 +17,8 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "vm/frame.h"
+//#include "vm/page.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -25,7 +27,7 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
    thread id, or TID_ERROR if the thread cannot be created. */
-
+ 
 // Dakota and Jeff driving here   
 tid_t
 process_execute (const char *file_name) 
@@ -37,6 +39,8 @@ process_execute (const char *file_name)
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
+
+  //fn_copy = get_new_frame ();
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
@@ -51,7 +55,7 @@ process_execute (const char *file_name)
   tid = thread_create (file, PRI_DEFAULT, start_process, fn_copy);
 
   if (tid == TID_ERROR)
-    palloc_free_page (fn_copy); 
+    palloc_free_page (fn_copy); //change to free the frame
 
   struct thread *child = get_thread_tid (tid);
 
@@ -287,15 +291,14 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
+  
   if (t->pagedir == NULL) 
     goto done;
   process_activate ();
 
   //Dakota driving here
 
-  char *token, *save_ptr; // for spliter
-
-  char * real;
+  char *save_ptr; // for spliter
 
   char s[100]; //setting up s
 
@@ -385,8 +388,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
           else
             goto done;
           break;
-        }
-    }
+        } 
+    }   
 
   /* Set up stack. */
   if (!setup_stack (esp, file_name))
@@ -405,8 +408,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
 }
 
 /* load() helpers. */
-
-static bool install_page (void *upage, void *kpage, bool writable);
 
 /* Checks whether PHDR describes a valid, loadable segment in
    FILE and returns true if so, false otherwise. */
@@ -474,10 +475,10 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
   ASSERT (pg_ofs (upage) == 0);
   ASSERT (ofs % PGSIZE == 0);
-
+ 
   file_seek (file, ofs);
   while (read_bytes > 0 || zero_bytes > 0) 
-    {
+    { 
       /* Calculate how to fill this page.
          We will read PAGE_READ_BYTES bytes from FILE
          and zero the final PAGE_ZERO_BYTES bytes. */
@@ -522,26 +523,29 @@ setup_stack (void **esp, char *file_name)
   uint8_t *kpage;
   bool success = false;
 
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+  kpage = get_new_frame (((uint8_t *) PHYS_BASE) - PGSIZE); // should probably be a variable???
+ // kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
-      success = install_page ( ((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true );
-      if (success)
+ //     printf("\nnot hanging1\n");
+
+      // success = install_page ( ((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true );
+      // if (success)
         *esp = PHYS_BASE; // temporary 
-      else
-        palloc_free_page (kpage);
+      // else
+        // palloc_free_page (kpage);
     }
+//printf("\nnot hanging2\n");
 
   // our code starts
   char* myEsp = (char*) *esp;
-  char* n_word = NULL;
   char *file_cpy = file_name;   // copying cmdline
   char *token, *save_ptr;       // for spliter
   char s[strlen(file_cpy)];
 
   strlcpy(s, file_cpy, strlen (file_cpy)+1);  //moves cmdline copy into s, add 1 for null
 
-  int count = -1;  //tracking number of arguments
+  int count = -1;  //tracking number of arguments 
 
   // limiting number of characters on stack to 130
   char *args[130] = {NULL};
@@ -563,6 +567,7 @@ setup_stack (void **esp, char *file_name)
     int i;
 
     myEsp--;
+//printf("\nnot hanging333333\n");
     *myEsp = NULL;  // store end nullcharacter on stack and decrement stack
 
     for(i = strlen (args[count]+1); i>=0; i--)  // loops through argument characters
@@ -593,7 +598,7 @@ setup_stack (void **esp, char *file_name)
   //printf("myEsp2 %p \n", myEsp);
 
   count = count_save;
-  while(count >= 0)  // while still has args
+  while(count >= 0)  // while still has args 
   {     
     myEsp -= sizeof(char *);
     
@@ -631,7 +636,7 @@ setup_stack (void **esp, char *file_name)
    with palloc_get_page().
    Returns true on success, false if UPAGE is already mapped or
    if memory allocation fails. */
-static bool
+bool
 install_page (void *upage, void *kpage, bool writable)
 {
   struct thread *t = thread_current ();

@@ -82,8 +82,8 @@ typedef int tid_t;
    only because they are mutually exclusive: only a thread in the
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
-
-struct thread
+ 
+struct thread 
 {
     /* Owned by thread.c. */
     tid_t tid;                          /* Thread identifier. */
@@ -93,7 +93,7 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
  
-   
+ 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -122,9 +122,11 @@ struct thread
     int exit_status; // the exit status of this thread
     int load; // if the thread successfully loaded
 
+    struct condition *conWait;
 
 /*      End of Project 2 elements         */
-    struct condition *conWait;
+    struct hash *page_table;
+
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
