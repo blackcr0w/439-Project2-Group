@@ -5,5 +5,5 @@ userprog/exception.o: ../../userprog/exception.c \
   ../../userprog/gdt.h ../../threads/loader.h ../../threads/interrupt.h \
   ../../threads/thread.h ../../lib/kernel/list.h ../../threads/synch.h \
   ../../threads/vaddr.h ../../threads/loader.h ../../userprog/syscall.h \
-  ../../threads/palloc.h ../../vm/frame.h ../../vm/page.h \
-  ../../lib/kernel/hash.h ../../lib/kernel/list.h
+  ../../threads/palloc.h ../../vm/page.h ../../lib/kernel/hash.h \
+  ../../lib/kernel/list.h ../../vm/frame.h

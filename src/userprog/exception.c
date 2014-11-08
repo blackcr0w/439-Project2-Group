@@ -7,7 +7,8 @@
 #include "threads/vaddr.h"
 #include "userprog/syscall.h"
 #include "threads/palloc.h"
-#include "vm/frame.h"
+#include "vm/page.h"
+
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
@@ -141,70 +142,135 @@ page_fault (struct intr_frame *f)
 
   void * va = f -> eip;
 
-
-  
-
   int * esp = f->esp;
   bad_pointer (esp+1);
   bad_pointer (*(esp+1));
-  //bad_pointer(esp+3);
-
-  
-
+ 
   //check if on swap?
     //if its in swap and frames are full, evict some frame
   //if in swap and not full just swap in
   // if not on swap you need to palloc some new memory
     //else if not on swap and full in frames need to evict and then place in
   //map somewhere above ^
-
-
-
-  // check if on swap
-  // hash_find (thread_current() -> page_table, va);
   struct page * p = page_lookup (va);
-  
-  // if not in frame (must be in swap)
-  if(!p -> in_frame_table)
+
+  if(p == NULL)
   {
+    thread_exit();  //requesting data that is never in memory so exit, also free pages allocated to that process alive bit
+  }
 
-    void * kpage = palloc_get_page (PAL_USER);
+  if(p -> access == 0) //if memory has not yet been allocated for this page then allocate it
+  {
+    void *kpage = get_new_frame(p);  // get a physical memory spot for the faulting process
 
-    // frame table is full, must evict
-    if(kpage==NULL)
+
+
+    if (kpage == NULL){}
+      //evict to get a phyiscal frame
+      
+
+    /* Load this page. */
+    if (file_read (p -> file, kpage, p -> page_read_bytes) != (int) p -> page_read_bytes)
     {
-      // evict page (make a hole)
-      // remove page mapping
-      // put this in evict!!!!!!!!!!!!!!!!!!?! pagedir_clear_page (uint32_t *pd, void *upage)
-      evict_page ();
+      p -> access = 0;
+      p -> in_frame_table = 0;
+      palloc_free_page (kpage);
     }
+    memset (kpage + p -> page_read_bytes, 0, p -> page_zero_bytes);
 
-    // not full, just put into frame table
+    /* Add the page to the process's address space. */
+    if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
+    {
+      p -> access = 0;
+      p -> in_frame_table = 0;
+      palloc_free_page (kpage);
+    }
     else
     {
-      // free mem we took earlier
-      palloc_free (kpage);
+       p -> access = 1;
+       p -> in_frame_table = 1;
+    }   
+  }
+
+  else //if it is in swap
+  {
+    void *kpage = get_new_frame(p);
+   
+    if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
+    {
+      p -> access = 0;
+      p -> in_frame_table = 0;
+      palloc_free_page (kpage);
+    }
+    else
+    {
+      p -> in_frame_table = 1;
+      p -> access = 1;
     }
 
+   
+    //evict()
+  }
+
+
+
+//    // if not in frame (must be in swap)
+ // if(!p -> in_frame_table)    // useless check!!!!????
+ // {
+
+ //   void * kpage = palloc_get_page (PAL_USER);
+
+    // frame table is full, must evict
+  //  if(kpage==NULL)
+   // {
+      // evict page (make a hole)
+      // remove page mapping
+   //   // put this in evict!!!!!!!!!!!!!!!!!!?! pagedir_clear_page (uint32_t *pd, void *upage)
+   //   evict_page ();
+    //}
+
+    // not full, just put into frame table
+   // else
+   // {
+      // free mem we took earlier
+  //   palloc_free_page (kpage);
+  //  }
+
     // make the new frame
-    get_new_frame (va);
+   // get_new_frame (va);
     
     // update mapping
-    install_page (va, kpage, true);
+   // install_page (va, kpage, true);
   
-  }
+ // }
 
   // if not in the swap table
   // did not previously exist
-  else
-  {
-    void * kpage = palloc_get_page (PAL_USER);    
+ // else                              // if it did not previously exist then it wouldn't be in our supplementary page table. page_lookup will return NULL.
+  // {
+  //   void * kpage = palloc_get_page (PAL_USER);    
 
-    // if it's full
-    if(kpage==NULL)
-      evict_page();
+  //   // if it's full
+  //   if(kpage==NULL)
+  //     evict_page();
 
-  }
+  //   // not full, put in the frame table
+  //   else
+  //   {
+  //     // free the memory that we got earlier
+  //     palloc_free_page (kpage);
+  //   }
+
+  //     // get a new frame
+  //     get_new_frame (va);
+
+  //     // update the mapping
+  //     install_page (va, kpage, true);
+
+  //     // update our supplementary page table
+  //     insert_page (p);
+
+  // }
 
 
 

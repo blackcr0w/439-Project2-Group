@@ -17,8 +17,8 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-#include "vm/frame.h"
-//#include "vm/page.h"
+//#include "vm/frame.h"
+#include "vm/page.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -486,24 +486,23 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
       /* Get a page of memory. */
-      uint8_t *kpage = palloc_get_page (PAL_USER);
-      if (kpage == NULL)
-        return false;
+    //  uint8_t *kpage = palloc_get_page (PAL_USER);
 
-      /* Load this page. */
-      if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
-        {
-          palloc_free_page (kpage);
-          return false; 
-        }
-      memset (kpage + page_read_bytes, 0, page_zero_bytes);
+      //update supplemental
 
-      /* Add the page to the process's address space. */
-      if (!install_page (upage, kpage, writable)) 
-        {
-          palloc_free_page (kpage);
-          return false; 
-        }
+      struct page *p = malloc (sizeof (struct page)); //make a new page
+
+      p -> access = 0;
+
+      p -> file = file;
+      p -> ofs = ofs;
+      p -> VA = (void*) upage;
+      p -> page_read_bytes = page_read_bytes;
+      p -> page_zero_bytes = page_zero_bytes;
+      p -> writable = writable;
+
+      insert_page(p);
+
 
       /* Advance. */
       read_bytes -= page_read_bytes;
@@ -523,19 +522,16 @@ setup_stack (void **esp, char *file_name)
   uint8_t *kpage;
   bool success = false;
 
-  kpage = get_new_frame (((uint8_t *) PHYS_BASE) - PGSIZE); // should probably be a variable???
+  kpage = get_new_frame (NULL); // should probably be a variable???
  // kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
- //     printf("\nnot hanging1\n");
-
-      // success = install_page ( ((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true );
-      // if (success)
+       success = install_page ( ((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true );
+       if (success)
         *esp = PHYS_BASE; // temporary 
-      // else
-        // palloc_free_page (kpage);
+       else
+         palloc_free_page (kpage);
     }
-//printf("\nnot hanging2\n");
 
   // our code starts
   char* myEsp = (char*) *esp;

@@ -19,21 +19,15 @@
 //struct list free_list;
 
 struct hash frame_table;
-
+struct hash_iterator i;
 
 void 
 insert_frame (struct frame *f)
 {
 	hash_insert (&frame_table, &f->hash_elem);
 
-  /* if (frame_index != 1024)
-   {
-   	 f -> frame_in = frame_index;
-	 frame_table[frame_index] = f;
-	 frame_index++;
-   }
-   else
-   	ASSERT(0);*/
+
+   //ASSERT(0);
 
 	// eviction policy comes later implemented
 }
@@ -41,85 +35,66 @@ insert_frame (struct frame *f)
 void
 free_frame (void *addr)
 {
-	/*int i;
-	for (i = 0; i <= 256; i++)
-	{
-		if (frame_table[i] != NULL)
-			if (frame_table[i] -> PA == adr)  //can you compare void pointers
-			{
-				palloc_free_page(adr);
-				frame_table[i] = NULL;
-				break;
-			}
-	}*/
-
 	//go through swap table and check if it is in there
 }
 
 void 
 init_frame_table (void)  
 {
-	//list_init(&free_list);
 	hash_init (&frame_table, frame_hash, hash_less, NULL);
+    hash_first (&i, &frame_table);
 
- // int i;
-
-  //for(i = 0; i < 1024; i++)	//change 256 later
- // {
-  //	frame_table[i] = NULL;
-  	//struct free_list_loc *loc;
-  //	loc->index = i;
-  //	list_push_front(&free_list, &loc->free_elem);
- // }
-  	
- 
- // frame_index = 0;
 }
 
 void *
-get_new_frame (void *upage)
+get_new_frame (struct page *p)  // pass in the page so that you can access it
 { 
-	struct frame *f = malloc (sizeof(struct frame));
-	//struct page *p = f->page;
+	if(p==NULL)
+	{	
+		// because of this kpage = get_new_frame (NULL); in setup stack
 
-	f->page = malloc (sizeof (struct page));
+		// whatever we need to do!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		return NULL;
+	}
+	struct frame *f = malloc (sizeof(struct frame));
+
 	void * palloc_address = palloc_get_page (PAL_USER);
 
 	if(palloc_address == NULL)
 	{
-		ASSERT(0);//out of memory
-	//	evict_page();
+		//return NULL; // memory full must evict
+		evict_page(p);
+		palloc_free_page (palloc_address);
+		f->PA = palloc_get_page (PAL_USER);
 	}
-
-	//bool success = pagedir_set_page (thread_current()->pagedir, upage, palloc_address, 1); // should we make writable???   //maps the upage to kpage
-	//problem here hanging???
-	//ASSERT(success); // assuming that the mapping is successful
+	else
+		f->PA = palloc_address;	
 
 
-	// bool success = install_page (upage, palloc_address, true);
-	// ASSERT(success);
-
-
-	f->PA = palloc_address;
-
-	f->page->dirty = 0;
-	f->page->access = 1;
-	f->page->in_frame_table = 1;
-
-	// add to page table
-	//insert_page (f->page);
 	insert_frame (f);
 
 	return f->PA; 
-
-	//return palloc_get_page (PAL_USER);
-	 
 }
 
 void
-evict_page (void)
+evict_page (struct page *p)   // pass in the page so that you can access it
 {
+      if (hash_next (&i) != NULL)
+        {
+          struct frame *f = hash_entry (hash_cur (&i), struct frame, hash_elem);
+          remove_frame (f);
+          insert_swap (p);  // set bits 																// PUT INTO SWAP TABLE.		NEED TO FIND THE PAGE TO PUT INTO SWAP.
+        }
 
+        // if it is at the end (NULL) then go back to beginning
+        else
+      		hash_first (&i, &frame_table);
+
+}
+
+void remove_frame (struct frame *f)
+{
+	hash_delete (&frame_table, &f->hash_elem);
 }
 
 bool
@@ -138,4 +113,3 @@ frame_hash (const struct hash_elem *h_elem, void *aux UNUSED)
   const struct frame *f = hash_entry (h_elem, struct frame, hash_elem);
   return hash_bytes (&f->PA, sizeof f->PA);
 }
-

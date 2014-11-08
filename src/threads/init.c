@@ -104,6 +104,7 @@ main (void)
   paging_init ();
 
   init_frame_table ();//frame init data structure
+  init_swap_table ();
   /* Segmentation. */
 #ifdef USERPROG
   tss_init ();
