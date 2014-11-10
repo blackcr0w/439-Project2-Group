@@ -1,5 +1,5 @@
 Copying tests/userprog/rox-simple to scratch partition...
-qemu -hda /tmp/5SOEg1SoNS.dsk -m 4 -net none -nographic -monitor null
+qemu -hda /tmp/AD6IefwwuL.dsk -m 4 -net none -nographic -monitor null
 PiLo hda1
 Loading.........
 Kernel command line: -q -f extract run rox-simple
@@ -8,7 +8,7 @@ Pintos booting with 4,096 kB RAM...
 383 pages available in user pool.
 Calibrating timer...  209,510,400 loops/s.
 hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
-hda1: 147 sectors (73 kB), Pintos OS kernel (20)
+hda1: 155 sectors (77 kB), Pintos OS kernel (20)
 hda2: 4,096 sectors (2 MB), Pintos file system (21)
 hda3: 101 sectors (50 kB), Pintos scratch (22)
 hda4: 8,192 sectors (4 MB), Pintos swap (23)
@@ -21,19 +21,6 @@ Extracting ustar archive from scratch device into file system...
 Putting 'rox-simple' into the file system...
 Erasing ustar archive...
 Executing 'rox-simple':
-(rox-simple) begin
-(rox-simple) open "rox-simple"
-(rox-simple) read "rox-simple"
-(rox-simple) try to write "rox-simple"
-(rox-simple) end
-rox-simple: exit(0)
-Execution of 'rox-simple' complete.
-Timer: 227 ticks
-Thread: 0 idle ticks, 226 kernel ticks, 1 user ticks
-hda2 (filesys): 66 reads, 206 writes
-hda3 (scratch): 100 reads, 2 writes
-hda4 (swap): 0 reads, 0 writes
-Console: 1089 characters output
-Keyboard: 0 keys pressed
-Exception: 0 page faults
-Powering off...
+rox-simple: exit(-1)
+
+TIMEOUT after 61 seconds of wall-clock time - load average: 0.14, 0.32, 0.30

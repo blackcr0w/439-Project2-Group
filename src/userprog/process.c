@@ -59,6 +59,8 @@ process_execute (const char *file_name)
 
   struct thread *child = get_thread_tid (tid);
 
+  child->root = 0;
+
   if(!child == NULL)
   {
     child->parent = cur;  // if the child exists set its parent to the current thread
@@ -165,11 +167,18 @@ process_exit (void)
     struct thread *child = list_entry (set_null, struct thread, child_elem);
     child->parent = NULL;
   }
+ 
 
-  if(cur->parent != NULL)     //if parent not dead tell them that this thread is about to die
+  // WHY DOES IT HANG ON THE SEMAPHORE WITHOUT THE CHECK
+  // WHY DOES IT HANG ON THE PAGEDIR WITH THE CHECK
+  if(cur->parent != NULL /*&& !cur->parent->root*/) // if parent not dead tell them that this thread is about to die
   {
+    // printf("\nhi %d\n", cur->parent->root);
+
     sema_up (&cur-> parent -> sema_parent_block);
-    sema_down (&cur-> wait_block);  //blocking so parent can get info first
+    sema_down (&cur-> wait_block); // blocking so parent can get info first
+    // printf("\n\n\n\n\nPROCESS EXIT\n");
+    // MAY HAVE ISSUE WITH ROOT, MAYBE USE GLOBAL VARIABLE
   }
 
   /* Destroy the current process's page directory and switch back
@@ -177,6 +186,7 @@ process_exit (void)
   pd = cur->pagedir;
   if (pd != NULL) 
     {
+    // printf("\nhi %s\n", cur->name);
       /* Correct ordering here is crucial.  We must set
          cur->pagedir to NULL before switching page directories,
          so that a timer interrupt can't switch back to the
@@ -501,8 +511,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       p -> page_zero_bytes = page_zero_bytes;
       p -> writable = writable;
 
-      insert_page(p);
-
+      insert_page (p);
 
       /* Advance. */
       read_bytes -= page_read_bytes;
@@ -522,22 +531,32 @@ setup_stack (void **esp, char *file_name)
   uint8_t *kpage;
   bool success = false;
 
-  kpage = get_new_frame (NULL); // should probably be a variable???
+  struct page *p = malloc (sizeof (struct page)); //make a new page
+  p->VA = ((uint8_t *) PHYS_BASE) - PGSIZE;
+  p->dirty = 0;
+
+
+
+
+//  kpage = get_new_frame (NULL);
  // kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-  if (kpage != NULL) 
-    {
-       success = install_page ( ((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true );
-       if (success)
-        *esp = PHYS_BASE; // temporary 
-       else
-         palloc_free_page (kpage);
-    }
+
+ // worry about stack growth later
+ kpage = get_new_frame (p);
+  
+  ASSERT(kpage != NULL) // get_new_frame should handle eviction if necessary
+  
+  success = install_page ( ((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true );
+  if (success)
+    *esp = PHYS_BASE; // temporary 
+  else
+    palloc_free_page (kpage);
 
   // our code starts
-  char* myEsp = (char*) *esp;
+  char *myEsp = (char*) *esp;
   char *file_cpy = file_name;   // copying cmdline
   char *token, *save_ptr;       // for spliter
-  char s[strlen(file_cpy)];
+  char s[strlen (file_cpy)];
 
   strlcpy(s, file_cpy, strlen (file_cpy)+1);  //moves cmdline copy into s, add 1 for null
 
@@ -563,7 +582,6 @@ setup_stack (void **esp, char *file_name)
     int i;
 
     myEsp--;
-//printf("\nnot hanging333333\n");
     *myEsp = NULL;  // store end nullcharacter on stack and decrement stack
 
     for(i = strlen (args[count]+1); i>=0; i--)  // loops through argument characters
@@ -580,7 +598,7 @@ setup_stack (void **esp, char *file_name)
   int align = (int) myEsp % 4;
   align += 4;
  
-  while(align != 0)  //while not word aligned
+  while(align != 0)  // while not word aligned
   {
     char word = NULL;
     myEsp--;
@@ -590,8 +608,7 @@ setup_stack (void **esp, char *file_name)
 
   int n = NULL;
   myEsp-= 4;
-  *myEsp = n;  //push 0
-  //printf("myEsp2 %p \n", myEsp);
+  *myEsp = n;  // push 0
 
   count = count_save;
   while(count >= 0)  // while still has args 
@@ -608,17 +625,17 @@ setup_stack (void **esp, char *file_name)
   myEsp -= 4;
   *(char **)myEsp = start;
 
-  myEsp -= 4; //adds number of arguments to stack
+  myEsp -= 4; // adds number of arguments to stack
   *myEsp = count_save + 1;
 
-  void * ret; //arbitrary return value
+  void * ret; // arbitrary return value
 
   myEsp -= 4;
-  *myEsp = ret;  //final return adress
+  *myEsp = ret;  // final return adress
 
   *esp = myEsp;
 
-  //hex_dump(*esp, *esp, PHYS_BASE-*esp,1);
+  // hex_dump(*esp, *esp, PHYS_BASE-*esp,1);
 
   return success;
 }

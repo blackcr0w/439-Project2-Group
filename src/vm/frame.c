@@ -10,6 +10,7 @@
 #include "vm/frame.h"
 #include "threads/malloc.h"
 #include "kernel/hash.h"
+#include "vm/swap.h"
 
 //#include "kernel/hash.h"
 
@@ -32,23 +33,17 @@ insert_frame (struct frame *f)
 	// eviction policy comes later implemented
 }
 
-void
-free_frame (void *addr)
-{
-	//go through swap table and check if it is in there
-}
-
 void 
 init_frame_table (void)  
 {
 	hash_init (&frame_table, frame_hash, hash_less, NULL);
     hash_first (&i, &frame_table);
-
 }
 
 void *
 get_new_frame (struct page *p)  // pass in the page so that you can access it
 { 
+	ASSERT(p!=NULL);
 	if(p==NULL)
 	{	
 		// because of this kpage = get_new_frame (NULL); in setup stack
@@ -56,20 +51,25 @@ get_new_frame (struct page *p)  // pass in the page so that you can access it
 		// whatever we need to do!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		return NULL;
 	}
-	struct frame *f = malloc (sizeof(struct frame));
+
+	// make a new frame
+	struct frame *f = malloc (sizeof (struct frame));
+
+	// map that frame to the given page
+	f->page_ptr = p;
 
 	void * palloc_address = palloc_get_page (PAL_USER);
 
+	// if memory is full
 	if(palloc_address == NULL)
 	{
-		//return NULL; // memory full must evict
-		evict_page(p);
-		palloc_free_page (palloc_address);
-		f->PA = palloc_get_page (PAL_USER);
+		evict_page (); // make some memory available
+		f->PA = palloc_get_page (PAL_USER); // 
 	}
+
+	// if memory is not full
 	else
 		f->PA = palloc_address;	
-
 
 	insert_frame (f);
 
@@ -77,18 +77,19 @@ get_new_frame (struct page *p)  // pass in the page so that you can access it
 }
 
 void
-evict_page (struct page *p)   // pass in the page so that you can access it
+evict_page ()
 {
-      if (hash_next (&i) != NULL)
-        {
-          struct frame *f = hash_entry (hash_cur (&i), struct frame, hash_elem);
-          remove_frame (f);
-          insert_swap (p);  // set bits 																// PUT INTO SWAP TABLE.		NEED TO FIND THE PAGE TO PUT INTO SWAP.
-        }
+	if (hash_next (&i) != NULL)
+	{
+	  struct frame *f = hash_entry (hash_cur (&i), struct frame, hash_elem);
+	  insert_swap (f->page_ptr);  // set bits 																// PUT INTO SWAP TABLE.		NEED TO FIND THE PAGE TO PUT INTO SWAP.
+	  remove_frame (f);
+	  palloc_free_page (f->PA);
+	}
 
-        // if it is at the end (NULL) then go back to beginning
-        else
-      		hash_first (&i, &frame_table);
+	// if it is at the end then go back to beginning
+	else
+		hash_first (&i, &frame_table);
 
 }
 

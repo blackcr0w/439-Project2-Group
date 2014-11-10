@@ -131,6 +131,7 @@ close_files()
 void
 bad_pointer(int *esp) 
 {
+
   struct thread *cur = thread_current ();
   
   // check if esp is a valid ptr at all

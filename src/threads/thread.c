@@ -337,6 +337,7 @@ thread_tid (void)
 void
 thread_exit (void) 
 {
+
     ASSERT (!intr_context ());
 
 #ifdef USERPROG
@@ -544,6 +545,8 @@ init_thread (struct thread *t, const char *name, int priority)
 
     t -> fd_index = 2;
     t -> load = 1;
+
+    t -> root = 1;
 
     int *file_pointers[130] = {NULL};
 

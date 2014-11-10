@@ -143,6 +143,8 @@ page_fault (struct intr_frame *f)
   void * va = f -> eip;
 
   int * esp = f->esp;
+ /* printf("\n\n\n\n\nPAGE FAULT\n");
+  printf("ESP+1: %p\n", esp+1);*/
   bad_pointer (esp+1);
   bad_pointer (*(esp+1));
  
@@ -187,8 +189,8 @@ page_fault (struct intr_frame *f)
     }
     else
     {
-       p -> access = 1;
-       p -> in_frame_table = 1;
+      p -> access = 1;
+      p -> in_frame_table = 1;
     }   
   }
 

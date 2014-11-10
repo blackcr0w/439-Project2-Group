@@ -124,6 +124,8 @@ struct thread
 
     struct condition *conWait;
 
+    int root; //determines if it is the first thread
+
 /*      End of Project 2 elements         */
     struct hash *page_table;
 

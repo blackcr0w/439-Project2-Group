@@ -1,2 +1,2 @@
 FAIL
-Run didn't produce any output
+run: TIMEOUT after 61 seconds of wall-clock time - load average: 0.40, 0.27, 0.29
