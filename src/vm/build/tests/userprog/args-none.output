@@ -1,5 +1,5 @@
 Copying tests/userprog/args-none to scratch partition...
-qemu -hda /tmp/4QgbHNo5qk.dsk -m 4 -net none -nographic -monitor null
+qemu -hda /tmp/2GCplYsLJU.dsk -m 4 -net none -nographic -monitor null
 PiLo hda1
 Loading.........
 Kernel command line: -q -f extract run args-none
@@ -21,6 +21,53 @@ Extracting ustar archive from scratch device into file system...
 Putting 'args-none' into the file system...
 Erasing ustar archive...
 Executing 'args-none':
-args-none: exit(-1)
 
-TIMEOUT after 61 seconds of wall-clock time - load average: 0.34, 0.22, 0.27
+lookup is 0x8048000
+
+lookup is 0x8049000
+
+lookup is 0x804a000
+
+lookup is 0x804b000
+
+lookup is 0x804c000
+
+lookup is NULL in setup 0xbffff000
+
+hi
+Page Fault
+lookup is in exception 0x8048000
+lookup is in not rounded 0x8048758
+
+Page Fault
+lookup is in exception 0x804c000
+lookup is in not rounded 0x804c188
+
+Page Fault
+lookup is in exception 0x804b000
+lookup is in not rounded 0x804bc60
+
+Page Fault
+lookup is in exception 0x8049000
+lookup is in not rounded 0x80492b1
+
+Page Fault
+lookup is in exception 0x804a000
+lookup is in not rounded 0x804a2b1
+
+args-none: dying due to interrupt 0x0d (#GP General Protection Exception).
+Interrupt 0x0d (#GP General Protection Exception) at eip=0x804b2b1
+ cr2=0804a2b1 error=00000000
+ eax=0804a75e ebx=bfffff04 ecx=0804a7a5 edx=bfffff04
+ esi=00000001 edi=bfffffec esp=bffffeac ebp=bffffed8
+ cs=001b ds=0023 es=0023 ss=0023
+Execution of 'args-none' complete.
+Timer: 232 ticks
+Thread: 0 idle ticks, 230 kernel ticks, 2 user ticks
+hda2 (filesys): 63 reads, 204 writes
+hda3 (scratch): 99 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1782 characters output
+Keyboard: 0 keys pressed
+Exception: 5 page faults
+Powering off...

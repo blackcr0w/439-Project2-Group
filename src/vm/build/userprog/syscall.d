@@ -3,6 +3,7 @@ userprog/syscall.o: ../../userprog/syscall.c ../../lib/syscall-nr.h \
   ../../lib/stdbool.h ../../lib/stddef.h ../../lib/stdint.h \
   ../../lib/kernel/stdio.h ../../lib/string.h ../../userprog/process.h \
   ../../threads/thread.h ../../lib/kernel/list.h ../../threads/synch.h \
+  ../../lib/kernel/hash.h ../../lib/kernel/list.h \
   ../../userprog/syscall.h ../../userprog/pagedir.h ../../filesys/file.h \
   ../../filesys/off_t.h ../../filesys/filesys.h ../../threads/interrupt.h \
   ../../threads/vaddr.h ../../threads/loader.h ../../devices/shutdown.h \

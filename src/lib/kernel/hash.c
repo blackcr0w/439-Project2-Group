@@ -30,6 +30,7 @@ hash_init (struct hash *h,
   h->elem_cnt = 0;
   h->bucket_cnt = 4;
   h->buckets = malloc (sizeof *h->buckets * h->bucket_cnt);
+
   h->hash = hash;
   h->less = less;
   h->aux = aux; 
@@ -443,6 +444,6 @@ page_lookup (const void *address)
   struct hash_elem *e;
 
   p.VA = address;
-  e = hash_find (t -> page_table, &p.page_elem);
+  e = hash_find (&t -> page_table, &p.page_elem);
   return e != NULL ? hash_entry (e, struct page, page_elem) : NULL;
 }

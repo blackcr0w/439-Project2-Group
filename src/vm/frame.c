@@ -44,13 +44,13 @@ void *
 get_new_frame (struct page *p)  // pass in the page so that you can access it
 { 
 	ASSERT(p!=NULL);
-	if(p==NULL)
+	/*if(p==NULL)
 	{	
 		// because of this kpage = get_new_frame (NULL); in setup stack
 
 		// whatever we need to do!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		return NULL;
-	}
+	}*/
 
 	// make a new frame
 	struct frame *f = malloc (sizeof (struct frame));

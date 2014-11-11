@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "vm/page.h"
 
 #ifdef USERPROG
 #include "userprog/process.h"
@@ -132,8 +133,12 @@ thread_start (void)
     sema_init (&idle_started, 0);
     thread_create ("idle", PRI_MIN, idle, &idle_started);
 
+
+
     /* Start preemptive thread scheduling. */
     intr_enable ();
+
+
 
     /* Wait for the idle thread to initialize idle_thread. */
     sema_down (&idle_started);
@@ -556,6 +561,8 @@ init_thread (struct thread *t, const char *name, int priority)
     sema_init (&t->wait_block, 0);
     sema_init (&t->sema_parent_block, 0);
     sema_init (&t->exec_block, 0);
+
+    //hash_init (t->page_table, page_hash, hash_page_less, NULL);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

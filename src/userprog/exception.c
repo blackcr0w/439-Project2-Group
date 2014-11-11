@@ -127,6 +127,8 @@ kill (struct intr_frame *f)
 static void
 page_fault (struct intr_frame *f) 
 {
+   printf("Page Fault\n");
+
   bool not_present;  /* True: not-present page, false: writing r/o page. */
   bool write;        /* True: access was write, false: access was read. */
   bool user;         /* True: access by user, false: access by kernel. */
@@ -139,144 +141,6 @@ page_fault (struct intr_frame *f)
      See [IA32-v2a] "MOV--Move to/from Control Registers" and
      [IA32-v3a] 5.15 "Interrupt 14--Page Fault Exception
      (#PF)". */
-
-  void * va = f -> eip;
-
-  int * esp = f->esp;
- /* printf("\n\n\n\n\nPAGE FAULT\n");
-  printf("ESP+1: %p\n", esp+1);*/
-  bad_pointer (esp+1);
-  bad_pointer (*(esp+1));
- 
-  //check if on swap?
-    //if its in swap and frames are full, evict some frame
-  //if in swap and not full just swap in
-  // if not on swap you need to palloc some new memory
-    //else if not on swap and full in frames need to evict and then place in
-  //map somewhere above ^
-  struct page * p = page_lookup (va);
-
-  if(p == NULL)
-  {
-    thread_exit();  //requesting data that is never in memory so exit, also free pages allocated to that process alive bit
-  }
-
-  if(p -> access == 0) //if memory has not yet been allocated for this page then allocate it
-  {
-    void *kpage = get_new_frame(p);  // get a physical memory spot for the faulting process
-
-
-
-    if (kpage == NULL){}
-      //evict to get a phyiscal frame
-      
-
-    /* Load this page. */
-    if (file_read (p -> file, kpage, p -> page_read_bytes) != (int) p -> page_read_bytes)
-    {
-      p -> access = 0;
-      p -> in_frame_table = 0;
-      palloc_free_page (kpage);
-    }
-    memset (kpage + p -> page_read_bytes, 0, p -> page_zero_bytes);
-
-    /* Add the page to the process's address space. */
-    if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
-    {
-      p -> access = 0;
-      p -> in_frame_table = 0;
-      palloc_free_page (kpage);
-    }
-    else
-    {
-      p -> access = 1;
-      p -> in_frame_table = 1;
-    }   
-  }
-
-  else //if it is in swap
-  {
-    void *kpage = get_new_frame(p);
-   
-    if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
-    {
-      p -> access = 0;
-      p -> in_frame_table = 0;
-      palloc_free_page (kpage);
-    }
-    else
-    {
-      p -> in_frame_table = 1;
-      p -> access = 1;
-    }
-
-   
-    //evict()
-  }
-
-
-
-//    // if not in frame (must be in swap)
- // if(!p -> in_frame_table)    // useless check!!!!????
- // {
-
- //   void * kpage = palloc_get_page (PAL_USER);
-
-    // frame table is full, must evict
-  //  if(kpage==NULL)
-   // {
-      // evict page (make a hole)
-      // remove page mapping
-   //   // put this in evict!!!!!!!!!!!!!!!!!!?! pagedir_clear_page (uint32_t *pd, void *upage)
-   //   evict_page ();
-    //}
-
-    // not full, just put into frame table
-   // else
-   // {
-      // free mem we took earlier
-  //   palloc_free_page (kpage);
-  //  }
-
-    // make the new frame
-   // get_new_frame (va);
-    
-    // update mapping
-   // install_page (va, kpage, true);
-  
- // }
-
-  // if not in the swap table
-  // did not previously exist
- // else                              // if it did not previously exist then it wouldn't be in our supplementary page table. page_lookup will return NULL.
-  // {
-  //   void * kpage = palloc_get_page (PAL_USER);    
-
-  //   // if it's full
-  //   if(kpage==NULL)
-  //     evict_page();
-
-  //   // not full, put in the frame table
-  //   else
-  //   {
-  //     // free the memory that we got earlier
-  //     palloc_free_page (kpage);
-  //   }
-
-  //     // get a new frame
-  //     get_new_frame (va);
-
-  //     // update the mapping
-  //     install_page (va, kpage, true);
-
-  //     // update our supplementary page table
-  //     insert_page (p);
-
-  // }
-
-
-
-
 
   asm ("movl %%cr2, %0" : "=r" (fault_addr));
 
@@ -293,6 +157,93 @@ page_fault (struct intr_frame *f)
   user =        (f->error_code & PF_U) != 0;
 
 
+//ASSERT(0);
+  void * va = fault_addr;
+
+  void * rounded_va = pg_round_down(va);
+
+  printf ("lookup is in exception %p\n", rounded_va);
+  printf ("lookup is in not rounded %p\n\n", va);
+
+//printf("\nphysical address %p\n", pagedir_get_page(thread_current()->pagedir, va));
+
+  int * esp = f->esp;
+/* printf("\n\n\n\n\nPAGE FAULT\n");
+  printf("ESP+1: %p\n", esp+1);*/
+  //bad_pointer (esp+1);
+ // bad_pointer (*(esp+1));
+ 
+  if(is_kernel_vaddr (esp))
+  {
+    printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
+    thread_exit ();
+  }
+
+  //check if on swap?
+    //if its in swap and frames are full, evict some frame
+  //if in swap and not full just swap in
+  // if not on swap you need to palloc some new memory
+    //else if not on swap and full in frames need to evict and then place in
+  //map somewhere above ^
+  struct page * p = page_lookup (rounded_va);
+
+  if(p == NULL)
+    thread_exit();  //requesting data that is never in memory so exit, also free pages allocated to that process alive bit
+ 
+  if(p -> access == 0) //if memory has not yet been allocated for this page then allocate it
+  {
+    void *kpage = get_new_frame (p);  // get a physical memory spot for the faulting process
+
+    file_seek (p -> file, p -> ofs);
+    /* Load this page. */
+  /*  if (file_read_at (p -> file, kpage, p -> page_read_bytes, p -> ofs) 
+          != (int) p -> page_read_bytes)*/
+      if (file_read (p -> file, kpage, p -> page_read_bytes) 
+          != (int) p -> page_read_bytes)
+    {
+      p -> access = 0;
+      p -> in_frame_table = 0;
+      palloc_free_page (kpage); //if didn't read what happens
+      thread_exit ();
+    }
+    memset (kpage + p -> page_read_bytes, 0, p -> page_zero_bytes);
+
+    /* Add the page to the process's address space. */
+    if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
+    {
+      p -> access = 0;
+      p -> in_frame_table = 0;
+      palloc_free_page (kpage);
+    }
+    else
+    {
+ 
+      p -> access = 1;
+      p -> in_frame_table = 1;
+      return;
+    }   
+  }
+
+  else //if it is in swap
+  {
+    void *kpage = get_new_frame (p);
+   
+    if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
+    {
+      p -> access = 0;
+      p -> in_frame_table = 0;
+      palloc_free_page (kpage);
+    }
+    else
+    {
+      p -> in_frame_table = 1;
+      p -> access = 1;
+      return;
+    }
+
+   
+    //evict()
+  }
 
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to

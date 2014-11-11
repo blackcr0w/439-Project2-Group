@@ -40,7 +40,6 @@ process_execute (const char *file_name)
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
 
-  //fn_copy = get_new_frame ();
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
@@ -53,7 +52,6 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file, PRI_DEFAULT, start_process, fn_copy);
-
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); //change to free the frame
 
@@ -299,8 +297,11 @@ load (const char *file_name, void (**eip) (void), void **esp)
   bool success = false;
   int i;
 
+
+
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
+  init_page_table();
   
   if (t->pagedir == NULL) 
     goto done;
@@ -407,13 +408,14 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
+  // printf("\nlookup is NULL in load %p\n", eip);
 
   success = true;
 
   done:
   /* We arrive here whether the load is successful or not. */
   sema_up(&t->parent->exec_block);  //sema up on parents blocking on exec semaphore
- 
+
   return success;
 }
 
@@ -486,7 +488,8 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   ASSERT (pg_ofs (upage) == 0);
   ASSERT (ofs % PGSIZE == 0);
  
-  file_seek (file, ofs);
+     // init_page_table ();
+  //file_seek (file, ofs);
   while (read_bytes > 0 || zero_bytes > 0) 
     { 
       /* Calculate how to fill this page.
@@ -511,7 +514,13 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       p -> page_zero_bytes = page_zero_bytes;
       p -> writable = writable;
 
+printf("\nlookup is %p\n", p->VA);
+//printf("pages is %p\n", file);
+
+ //printf("\nStill Going2\n");
       insert_page (p);
+      //if(page_lookup (p->VA) == NULL)
+     //   printf("\nlookup is NULL %p\n", page_lookup (p->VA) -> VA);
 
       /* Advance. */
       read_bytes -= page_read_bytes;
@@ -535,10 +544,8 @@ setup_stack (void **esp, char *file_name)
   p->VA = ((uint8_t *) PHYS_BASE) - PGSIZE;
   p->dirty = 0;
 
+printf("\nlookup is NULL in setup %p\n", p->VA);
 
-
-
-//  kpage = get_new_frame (NULL);
  // kpage = palloc_get_page (PAL_USER | PAL_ZERO);
 
  // worry about stack growth later

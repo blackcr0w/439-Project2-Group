@@ -13,18 +13,19 @@
 void 
 init_page_table (void)
 {
-	hash_init (thread_current()->page_table, page_hash, hash_page_less, NULL);
+
+	hash_init (&thread_current()->page_table, page_hash, hash_page_less, NULL);
 }
 
 void 
 insert_page (struct page *p)
 {
-	hash_insert (thread_current()->page_table, &p->page_elem);
+	hash_insert (&thread_current()->page_table, &p->page_elem);
 }
 
 void remove_page (struct page *p)
 {
-	hash_delete (thread_current()->page_table, &p->page_elem);
+	hash_delete (&thread_current()->page_table, &p->page_elem);
 }
 
 bool

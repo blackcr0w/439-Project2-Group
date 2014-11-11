@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "synch.h"
+#include <hash.h>
 /* States in a thread's life cycle. */
 enum thread_status
 {
@@ -127,7 +128,7 @@ struct thread
     int root; //determines if it is the first thread
 
 /*      End of Project 2 elements         */
-    struct hash *page_table;
+    struct hash page_table;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
