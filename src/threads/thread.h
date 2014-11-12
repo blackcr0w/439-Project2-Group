@@ -24,7 +24,7 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
-
+#define MB8 8388608                     /* 8MB limit for stack data. */
 /* A kernel thread or user process.
 
    Each thread structure is stored in its own 4 kB page.  The
@@ -128,7 +128,9 @@ struct thread
     int root; //determines if it is the first thread
 
 /*      End of Project 2 elements         */
+    
     struct hash page_table;
+    char *stack_bottom; //pointer to the current bottom of the stack
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

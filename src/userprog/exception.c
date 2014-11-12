@@ -16,6 +16,8 @@ static long long page_fault_cnt;
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
 
+
+
 /* Registers handlers for interrupts that can be caused by user
    programs.
 
@@ -127,7 +129,7 @@ kill (struct intr_frame *f)
 static void
 page_fault (struct intr_frame *f) 
 {
-   printf("Page Fault\n");
+  // printf("Page Fault\n");
 
   bool not_present;  /* True: not-present page, false: writing r/o page. */
   bool write;        /* True: access was write, false: access was read. */
@@ -142,12 +144,16 @@ page_fault (struct intr_frame *f)
      [IA32-v3a] 5.15 "Interrupt 14--Page Fault Exception
      (#PF)". */
 
+
   asm ("movl %%cr2, %0" : "=r" (fault_addr));
 
   /* Turn interrupts back on (they were only off so that we could
      be assured of reading CR2 before it changed). */
   intr_enable ();
 
+printf ("Faulting address %p\n\n", fault_addr);
+
+printf ("ESP is %p\n\n", f->esp);
   /* Count page faults. */
   page_fault_cnt++;
 
@@ -156,20 +162,48 @@ page_fault (struct intr_frame *f)
   write =       (f->error_code & PF_W) != 0;
   user =        (f->error_code & PF_U) != 0;
 
+  int * esp = f->esp;
 
-//ASSERT(0);
   void * va = fault_addr;
 
-  void * rounded_va = pg_round_down(va);
+  void * rounded_va = pg_round_down (va);
 
-  printf ("lookup is in exception %p\n", rounded_va);
-  printf ("lookup is in not rounded %p\n\n", va);
+  char *bottom_limit = (thread_current ()-> stack_bottom) - 32;
+  printf ("New Bottom limit %p\n\n", bottom_limit);
+  printf ("bottom of the stack %p\n\n", thread_current ()-> stack_bottom);
 
-//printf("\nphysical address %p\n", pagedir_get_page(thread_current()->pagedir, va));
+  //printf ("lookup is in exception %p\n", rounded_va);
+  //printf ("lookup is in not rounded %p\n\n", va);
+  char *check_limit = PHYS_BASE + PGSIZE - MB8;
+  // check if the faulting address is in stack space 
+  if( esp >= bottom_limit && esp <= thread_current ()-> stack_bottom)
+  {
+    if(esp < check_limit)   // if va is greater than the 8MB limit, exit 
+      thread_exit ();
 
-  int * esp = f->esp;
-/* printf("\n\n\n\n\nPAGE FAULT\n");
-  printf("ESP+1: %p\n", esp+1);*/
+    struct page *p = malloc (sizeof (struct page)); // make a new page
+    void *kpage = get_new_frame (p);
+    
+    p-> writable = write;
+    thread_current ()-> stack_bottom -= PGSIZE;
+    p-> VA = thread_current ()-> stack_bottom;
+    if (!install_page (p -> VA, kpage, p-> writable))  // puts mapping in page directory
+    {
+      p -> access = 0;
+      p -> in_frame_table = 0;
+      palloc_free_page (kpage);
+      thread_exit ();
+    }
+    else
+    {
+      p -> in_frame_table = 1;
+      p -> access = 1;
+      insert_page (p);
+      return;
+    }
+
+  }
+
   //bad_pointer (esp+1);
  // bad_pointer (*(esp+1));
  
@@ -179,13 +213,15 @@ page_fault (struct intr_frame *f)
     thread_exit ();
   }
 
+
+
   //check if on swap?
     //if its in swap and frames are full, evict some frame
   //if in swap and not full just swap in
   // if not on swap you need to palloc some new memory
     //else if not on swap and full in frames need to evict and then place in
   //map somewhere above ^
-  struct page * p = page_lookup (rounded_va);
+ /* struct page * p = page_lookup (rounded_va);
 
   if(p == NULL)
     thread_exit();  //requesting data that is never in memory so exit, also free pages allocated to that process alive bit
@@ -195,9 +231,7 @@ page_fault (struct intr_frame *f)
     void *kpage = get_new_frame (p);  // get a physical memory spot for the faulting process
 
     file_seek (p -> file, p -> ofs);
-    /* Load this page. */
-  /*  if (file_read_at (p -> file, kpage, p -> page_read_bytes, p -> ofs) 
-          != (int) p -> page_read_bytes)*/
+
       if (file_read (p -> file, kpage, p -> page_read_bytes) 
           != (int) p -> page_read_bytes)
     {
@@ -208,7 +242,7 @@ page_fault (struct intr_frame *f)
     }
     memset (kpage + p -> page_read_bytes, 0, p -> page_zero_bytes);
 
-    /* Add the page to the process's address space. */
+    //Add the page to the process's address space. 
     if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
     {
       p -> access = 0;
@@ -240,10 +274,10 @@ page_fault (struct intr_frame *f)
       p -> access = 1;
       return;
     }
-
    
     //evict()
-  }
+  }*/
+
 
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to

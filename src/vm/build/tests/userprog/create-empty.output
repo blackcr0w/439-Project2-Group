@@ -1,5 +1,5 @@
 Copying tests/userprog/create-empty to scratch partition...
-qemu -hda /tmp/UEuT9QXzoF.dsk -m 4 -net none -nographic -monitor null
+qemu -hda /tmp/CiD4NLui8B.dsk -m 4 -net none -nographic -monitor null
 PiLo hda1
 Loading.........
 Kernel command line: -q -f extract run create-empty
@@ -21,6 +21,17 @@ Extracting ustar archive from scratch device into file system...
 Putting 'create-empty' into the file system...
 Erasing ustar archive...
 Executing 'create-empty':
-create-empty: exit(-1)
-
-TIMEOUT after 61 seconds of wall-clock time - load average: 0.33, 0.26, 0.26
+(create-empty) begin
+(create-empty) create(""): 0
+(create-empty) end
+create-empty: exit(0)
+Execution of 'create-empty' complete.
+Timer: 227 ticks
+Thread: 0 idle ticks, 223 kernel ticks, 4 user ticks
+hda2 (filesys): 64 reads, 208 writes
+hda3 (scratch): 99 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1030 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...
