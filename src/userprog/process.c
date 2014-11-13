@@ -476,7 +476,8 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
         - ZERO_BYTES bytes at UPAGE + READ_BYTES must be zeroed.
 
    The pages initialized by this function must be writable by the
-   user process if WRITABLE is true, read-only otherwise.
+   user proce
+   ss if WRITABLE is true, read-only otherwise.
 
    Return true if successful, false if a memory allocation error
    or disk read error occurs. */
@@ -696,7 +697,7 @@ setup_stack (void **esp, char *file_name)
   *esp = myEsp;
 
   // hex_dump(*esp, *esp, PHYS_BASE-*esp,1);
-printf ("ESP in stack is %p\n\n", myEsp);
+//printf ("ESP in stack is %p\n\n", myEsp);
   return success;
 }
 

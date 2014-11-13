@@ -26,6 +26,8 @@ syscall_init (void)
   sema_init (&sema_files, 1);
 }
 
+
+
 //Spencer and Jeff driving here
 static void
 syscall_handler (struct intr_frame *f) 
@@ -33,10 +35,12 @@ syscall_handler (struct intr_frame *f)
   // only allow one syscall at a time (up at the end)
   struct thread *cur = thread_current ();
   
+
   // get the system call
   int * esp = f->esp;
   bad_pointer (esp);
 
+  thread_current() -> stack = esp;
   // redirect to the correct function handler
   switch (*esp)
   { 

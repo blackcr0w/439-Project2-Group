@@ -9,14 +9,11 @@
 #include "threads/palloc.h"
 #include "vm/page.h"
 
-
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
-
-
 
 /* Registers handlers for interrupts that can be caused by user
    programs.
@@ -136,6 +133,12 @@ page_fault (struct intr_frame *f)
   bool user;         /* True: access by user, false: access by kernel. */
   void *fault_addr;  /* Fault address. */
 
+  asm ("movl %%cr2, %0" : "=r" (fault_addr));
+
+  /* Turn interrupts back on (they were only off so that we could
+     be assured of reading CR2 before it changed). */
+  intr_enable ();  
+
   /* Obtain faulting address, the virtual address that was
      accessed to cause the fault.  It may point to code or to
      data.  It is not necessarily the address of the instruction
@@ -145,15 +148,6 @@ page_fault (struct intr_frame *f)
      (#PF)". */
 
 
-  asm ("movl %%cr2, %0" : "=r" (fault_addr));
-
-  /* Turn interrupts back on (they were only off so that we could
-     be assured of reading CR2 before it changed). */
-  intr_enable ();
-
-printf ("Faulting address %p\n\n", fault_addr);
-
-printf ("ESP is %p\n\n", f->esp);
   /* Count page faults. */
   page_fault_cnt++;
 
@@ -162,77 +156,61 @@ printf ("ESP is %p\n\n", f->esp);
   write =       (f->error_code & PF_W) != 0;
   user =        (f->error_code & PF_U) != 0;
 
-  int * esp = f->esp;
+  int * esp = f->esp; //???save esp?
 
-  void * va = fault_addr;
+  void * previous_page = pg_round_up (fault_addr);
+  void * round_down_va = pg_round_down(fault_addr);
 
-  void * rounded_va = pg_round_down (va);
-
-  char *bottom_limit = (thread_current ()-> stack_bottom) - 32;
-  printf ("New Bottom limit %p\n\n", bottom_limit);
-  printf ("bottom of the stack %p\n\n", thread_current ()-> stack_bottom);
-
-  //printf ("lookup is in exception %p\n", rounded_va);
-  //printf ("lookup is in not rounded %p\n\n", va);
   char *check_limit = PHYS_BASE + PGSIZE - MB8;
-  // check if the faulting address is in stack space 
-  if( esp >= bottom_limit && esp <= thread_current ()-> stack_bottom)
-  {
-    if(esp < check_limit)   // if va is greater than the 8MB limit, exit 
-      thread_exit ();
 
-    struct page *p = malloc (sizeof (struct page)); // make a new page
-    void *kpage = get_new_frame (p);
-    
-    p-> writable = write;
-    thread_current ()-> stack_bottom -= PGSIZE;
-    p-> VA = thread_current ()-> stack_bottom;
-    if (!install_page (p -> VA, kpage, p-> writable))  // puts mapping in page directory
+    struct page * p = page_lookup (round_down_va);
+
+
+  if((int)esp - (int)fault_addr <= 32)
+  {
+    if(fault_addr < check_limit)   // if va is greater than the 8MB limit, exit 
     {
-      p -> access = 0;
-      p -> in_frame_table = 0;
-      palloc_free_page (kpage);
+      printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
       thread_exit ();
+    }
+
+    struct page *p_stack = malloc (sizeof (struct page)); // make a new page
+    void *kpage = get_new_frame (p_stack);
+   
+    p_stack-> writable = write;
+    thread_current ()-> stack_bottom -= PGSIZE;
+    p_stack-> VA = thread_current ()-> stack_bottom;
+    if (!install_page (p_stack -> VA, kpage, p_stack-> writable))  // puts mapping in page directory
+    {
+      p_stack -> access = 0;
+      p_stack -> in_frame_table = 0;
+      palloc_free_page (kpage);
     }
     else
     {
-      p -> in_frame_table = 1;
-      p -> access = 1;
-      insert_page (p);
+      p_stack -> in_frame_table = 1;
+      p_stack -> access = 1;
+      insert_page (p_stack);
       return;
     }
+  } 
 
-  }
-
-  //bad_pointer (esp+1);
- // bad_pointer (*(esp+1));
- 
-  if(is_kernel_vaddr (esp))
+  // lazy loading implementation
+  if(p == NULL)
   {
     printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
     thread_exit ();
   }
+    //thread_exit();  //requesting data that is never in memory so exit, also free pages allocated to that process alive bit
 
+  uint8_t *kpage = get_new_frame(p);
 
-
-  //check if on swap?
-    //if its in swap and frames are full, evict some frame
-  //if in swap and not full just swap in
-  // if not on swap you need to palloc some new memory
-    //else if not on swap and full in frames need to evict and then place in
-  //map somewhere above ^
- /* struct page * p = page_lookup (rounded_va);
-
-  if(p == NULL)
-    thread_exit();  //requesting data that is never in memory so exit, also free pages allocated to that process alive bit
- 
   if(p -> access == 0) //if memory has not yet been allocated for this page then allocate it
   {
     void *kpage = get_new_frame (p);  // get a physical memory spot for the faulting process
 
-    file_seek (p -> file, p -> ofs);
-
-      if (file_read (p -> file, kpage, p -> page_read_bytes) 
+    // Load this page. 
+    if (file_read_at (p -> file, kpage, p -> page_read_bytes, p -> ofs) 
           != (int) p -> page_read_bytes)
     {
       p -> access = 0;
@@ -240,9 +218,9 @@ printf ("ESP is %p\n\n", f->esp);
       palloc_free_page (kpage); //if didn't read what happens
       thread_exit ();
     }
-    memset (kpage + p -> page_read_bytes, 0, p -> page_zero_bytes);
+    memset (kpage + (p -> page_read_bytes), 0, p -> page_zero_bytes);
 
-    //Add the page to the process's address space. 
+    // Add the page to the process's address space. 
     if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
     {
       p -> access = 0;
@@ -251,7 +229,6 @@ printf ("ESP is %p\n\n", f->esp);
     }
     else
     {
- 
       p -> access = 1;
       p -> in_frame_table = 1;
       return;
@@ -274,9 +251,10 @@ printf ("ESP is %p\n\n", f->esp);
       p -> access = 1;
       return;
     }
-   
-    //evict()
-  }*/
+  }
+
+  printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
+  thread_exit ();
 
 
   /* To implement virtual memory, delete the rest of the function

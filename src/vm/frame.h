@@ -4,15 +4,17 @@
 
 #include "vm/page.h"
 #include "kernel/hash.h"
+#include "threads/synch.h"
 
-struct frame // initialize?????
+struct frame
 {
-	//void *page_ptr;
-	void * PA;
+	void * PA;	// physcial address
 
 	struct page *page_ptr;
 
-	struct hash_elem hash_elem;  //used to put in hash element
+	struct hash_elem hash_elem;  // used to put in hash element
+
+	struct semaphore sema_evict; // manages synchronization in evicting frame
 
 };
 
