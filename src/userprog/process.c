@@ -164,8 +164,7 @@ process_exit (void)
   {
     struct thread *child = list_entry (set_null, struct thread, child_elem);
     child->parent = NULL;
-  }
- 
+  } 
 
   // WHY DOES IT HANG ON THE SEMAPHORE WITHOUT THE CHECK
   // WHY DOES IT HANG ON THE PAGEDIR WITH THE CHECK
@@ -178,6 +177,7 @@ process_exit (void)
     // printf("\n\n\n\n\nPROCESS EXIT\n");
     // MAY HAVE ISSUE WITH ROOT, MAYBE USE GLOBAL VARIABLE
   }
+  //clear_thread_frames();
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -490,6 +490,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   ASSERT (pg_ofs (upage) == 0);
   ASSERT (ofs % PGSIZE == 0);
  
+     // init_page_table ();
   file_seek (file, ofs);
   while (read_bytes > 0 || zero_bytes > 0) 
     { 
@@ -500,61 +501,16 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
       /* Get a page of memory. */
-      //uint8_t *kpage = palloc_get_page (PAL_USER);
-
-struct page *p = malloc (sizeof (struct page)); //make a new page
-  p->VA = ((uint8_t *) PHYS_BASE) - PGSIZE;
-
-        uint8_t *kpage = get_new_frame (p);
-      if (kpage == NULL)
-        return false;
-
-      /* Load this page. */
-      if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
-        {
-          palloc_free_page (kpage);
-          return false; 
-        }
-      memset (kpage + page_read_bytes, 0, page_zero_bytes);
-
-      /* Add the page to the process's address space. */
-      if (!install_page (upage, kpage, writable)) 
-        {
-          palloc_free_page (kpage);
-          return false; 
-        }
-
-      /* Advance. */
-      read_bytes -= page_read_bytes;
-      zero_bytes -= page_zero_bytes;
-      upage += PGSIZE;
-    }
-  return true;
-}
-
-/*static bool
-load_segment (struct file *file, off_t ofs, uint8_t *upage,
-              uint32_t read_bytes, uint32_t zero_bytes, bool writable) 
-{
-  ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
-  ASSERT (pg_ofs (upage) == 0);
-  ASSERT (ofs % PGSIZE == 0);
- 
-     // init_page_table ();
-  //file_seek (file, ofs);
-  while (read_bytes > 0 || zero_bytes > 0) 
-    { 
-       Calculate how to fill this page.
-         We will read PAGE_READ_BYTES bytes from FILE
-         and zero the final PAGE_ZERO_BYTES bytes. 
-      size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
-      size_t page_zero_bytes = PGSIZE - page_read_bytes;
-
-      // Get a page of memory.
     //  uint8_t *kpage = palloc_get_page (PAL_USER);
 
       //update supplemental
 
+  /*printf("\nFile in load is: %p\n", file);
+  printf("ReadBytes in load is: %d\n", page_read_bytes);
+  printf("ofs in load is: %d\n", ofs);*/
+
+
+ 
       struct page *p = malloc (sizeof (struct page)); //make a new page
 
       p -> access = 0;
@@ -566,7 +522,13 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       p -> page_zero_bytes = page_zero_bytes;
       p -> writable = writable;
 
-printf("\nlookup is %p\n", p->VA);
+//printf("Load Segment\n");
+//printf("file offset %d\n", ofs);
+    /* printf("File in load is: %p\n", p->file);
+  printf("ReadBytes in load is: %d\n", p->page_read_bytes);
+  printf("ofs in load is: %d\n", p->ofs);*/
+
+//printf("lookup is %p\n\n", p->VA);
 //printf("pages is %p\n", file);
 
  //printf("\nStill Going2\n");
@@ -574,13 +536,15 @@ printf("\nlookup is %p\n", p->VA);
       //if(page_lookup (p->VA) == NULL)
      //   printf("\nlookup is NULL %p\n", page_lookup (p->VA) -> VA);
 
-      // Advance.
+      /* Advance. */
       read_bytes -= page_read_bytes;
       zero_bytes -= page_zero_bytes;
       upage += PGSIZE;
+      ofs += page_read_bytes;
+
     }
   return true;
-}*/
+}
 
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
@@ -595,6 +559,8 @@ setup_stack (void **esp, char *file_name)
   struct page *p = malloc (sizeof (struct page)); //make a new page
   p->VA = ((uint8_t *) PHYS_BASE) - PGSIZE;
   p->dirty = 0;
+
+  //insert_page(p);
 
 
   thread_current ()-> stack_bottom = p-> VA;

@@ -230,8 +230,8 @@ strstr (const char *haystack, const char *needle)
      'String'
      'to'
      'tokenize.'
-*/
-char *
+*/   
+char * 
 strtok_r (char *s, const char *delimiters, char **save_ptr) 
 {
   char *token;
@@ -257,8 +257,8 @@ strtok_r (char *s, const char *delimiters, char **save_ptr)
           return NULL;
         }
 
-      s++;
-    }
+      s++; 
+    } 
 
   /* Skip any non-DELIMITERS up to the end of the string. */
   token = s;
@@ -284,7 +284,8 @@ memset (void *dst_, int value, size_t size)
   
   while (size-- > 0)
     *dst++ = value;
-
+// printf("hy\n\n\n\n\n\n\n\n\n\n\nasdf");
+ // printf("");
   return dst_;
 }
 

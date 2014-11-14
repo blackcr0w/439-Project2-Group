@@ -17,7 +17,7 @@ struct page
 	int dirty;
 	int access;
 	int in_frame_table;
-	// struct frame *f;
+	struct frame *frame_ptr;
 	struct hash_elem page_elem;
 	struct hash_elem swap_elem;
 

@@ -9,9 +9,6 @@
 #include "kernel/hash.h"
 #include "vm/swap.h"
 
-struct hash swap_table;
-
-
 void 
 init_swap_table (void)
 {

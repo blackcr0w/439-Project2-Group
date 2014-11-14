@@ -1,5 +1,5 @@
 Copying tests/userprog/open-missing to scratch partition...
-qemu -hda /tmp/sj2_zhTu6L.dsk -m 4 -net none -nographic -monitor null
+qemu -hda /tmp/6CQkOs_f3C.dsk -m 4 -net none -nographic -monitor null
 PiLo hda1
 Loading.........
 Kernel command line: -q -f extract run open-missing
@@ -10,7 +10,7 @@ Calibrating timer...  209,510,400 loops/s.
 hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
 hda1: 155 sectors (77 kB), Pintos OS kernel (20)
 hda2: 4,096 sectors (2 MB), Pintos file system (21)
-hda3: 100 sectors (50 kB), Pintos scratch (22)
+hda3: 101 sectors (50 kB), Pintos scratch (22)
 hda4: 8,192 sectors (4 MB), Pintos swap (23)
 filesys: using hda2
 scratch: using hda3
@@ -25,12 +25,12 @@ Executing 'open-missing':
 (open-missing) end
 open-missing: exit(0)
 Execution of 'open-missing' complete.
-Timer: 259 ticks
-Thread: 0 idle ticks, 258 kernel ticks, 1 user ticks
-hda2 (filesys): 80 reads, 204 writes
-hda3 (scratch): 99 reads, 2 writes
+Timer: 232 ticks
+Thread: 0 idle ticks, 232 kernel ticks, 1 user ticks
+hda2 (filesys): 80 reads, 206 writes
+hda3 (scratch): 100 reads, 2 writes
 hda4 (swap): 0 reads, 0 writes
-Console: 1001 characters output
+Console: 1002 characters output
 Keyboard: 0 keys pressed
-Exception: 0 page faults
+Exception: 5 page faults
 Powering off...

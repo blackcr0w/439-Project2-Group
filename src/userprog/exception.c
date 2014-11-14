@@ -8,6 +8,7 @@
 #include "userprog/syscall.h"
 #include "threads/palloc.h"
 #include "vm/page.h"
+#include "vm/swap.h"
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
@@ -70,7 +71,7 @@ exception_print_stats (void)
 {
   printf ("Exception: %lld page faults\n", page_fault_cnt);
 }
-
+ 
 /* Handler for an exception (probably) caused by a user process. */
 static void
 kill (struct intr_frame *f) 
@@ -163,17 +164,26 @@ page_fault (struct intr_frame *f)
 
   char *check_limit = PHYS_BASE + PGSIZE - MB8;
 
-    struct page * p = page_lookup (round_down_va);
+  struct page * p = page_lookup (round_down_va);
 
+  //  printf("\nafter pagefault %p\n", fault_addr);
+/* printf("\nESP %p\n", esp);
+   printf("\nfaulting address %p\n", fault_addr);
+     printf("\ncheck limit %p\n", check_limit);
+         printf("\nprev page %p\n", previous_page);*/
 
-  if((int)esp - (int)fault_addr <= 32)
-  {
+  // lazy loading implementation
+  int dif =  (int)esp -(int)fault_addr;
+   
+       //printf("\ncrap %d\n", dif);
+  if(fault_addr >= (int)esp - 32 && user)
+  { 
+      //printf("\ngggggggggggggggggg\n");
     if(fault_addr < check_limit)   // if va is greater than the 8MB limit, exit 
     {
       printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
-      thread_exit ();
+      thread_exit (); 
     }
-
     struct page *p_stack = malloc (sizeof (struct page)); // make a new page
     void *kpage = get_new_frame (p_stack);
    
@@ -195,19 +205,17 @@ page_fault (struct intr_frame *f)
     }
   } 
 
-  // lazy loading implementation
   if(p == NULL)
   {
-    printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
+//printf("\nafter pagefault\n");
+    printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status); //trying to access data never asked for
     thread_exit ();
   }
-    //thread_exit();  //requesting data that is never in memory so exit, also free pages allocated to that process alive bit
-
-  uint8_t *kpage = get_new_frame(p);
-
+//printf("\naccess %d\n", p -> access);
   if(p -> access == 0) //if memory has not yet been allocated for this page then allocate it
   {
     void *kpage = get_new_frame (p);  // get a physical memory spot for the faulting process
+    // printf("\nptakatataktakta %p\n", p-> VA);
 
     // Load this page. 
     if (file_read_at (p -> file, kpage, p -> page_read_bytes, p -> ofs) 
@@ -218,6 +226,7 @@ page_fault (struct intr_frame *f)
       palloc_free_page (kpage); //if didn't read what happens
       thread_exit ();
     }
+  
     memset (kpage + (p -> page_read_bytes), 0, p -> page_zero_bytes);
 
     // Add the page to the process's address space. 
@@ -236,9 +245,8 @@ page_fault (struct intr_frame *f)
   }
 
   else //if it is in swap
-  {
+  { 
     void *kpage = get_new_frame (p);
-   
     if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
     {
       p -> access = 0;
@@ -247,11 +255,15 @@ page_fault (struct intr_frame *f)
     }
     else
     {
+      insert_frame (p->frame_ptr);
       p -> in_frame_table = 1;
       p -> access = 1;
+      hash_delete (&swap_table, &p->swap_elem);
+      pagedir_set_dirty (thread_current ()->pagedir, p, 1); 
       return;
     }
   }
+
 
   printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
   thread_exit ();

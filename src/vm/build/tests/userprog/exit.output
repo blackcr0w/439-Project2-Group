@@ -1,5 +1,5 @@
 Copying tests/userprog/exit to scratch partition...
-qemu -hda /tmp/SdUxBuRDDv.dsk -m 4 -net none -nographic -monitor null
+qemu -hda /tmp/A72vqb3iSk.dsk -m 4 -net none -nographic -monitor null
 PiLo hda1
 Loading.........
 Kernel command line: -q -f extract run exit
@@ -24,12 +24,12 @@ Executing 'exit':
 (exit) begin
 exit: exit(57)
 Execution of 'exit' complete.
-Timer: 259 ticks
-Thread: 0 idle ticks, 258 kernel ticks, 1 user ticks
+Timer: 225 ticks
+Thread: 0 idle ticks, 224 kernel ticks, 1 user ticks
 hda2 (filesys): 61 reads, 204 writes
 hda3 (scratch): 99 reads, 2 writes
 hda4 (swap): 0 reads, 0 writes
 Console: 935 characters output
 Keyboard: 0 keys pressed
-Exception: 0 page faults
+Exception: 5 page faults
 Powering off...

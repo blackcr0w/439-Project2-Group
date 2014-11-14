@@ -447,3 +447,29 @@ page_lookup (const void *address)
   e = hash_find (&t -> page_table, &p.page_elem);
   return e != NULL ? hash_entry (e, struct page, page_elem) : NULL;
 }
+/*
+struct page *
+page_lookup_st (const void *address)
+{
+  struct thread *t = thread_current();
+
+  struct page p;
+  struct hash_elem *e;
+
+  p.VA = address;
+  e = hash_find (&swap_table, &p.swap_elem);
+  return e != NULL ? hash_entry (e, struct page, swap_elem) : NULL;
+}
+
+struct frame *
+page_lookup_ft (const void *address)
+{
+  struct thread *t = thread_current();
+
+  struct frame f;
+  struct hash_elem *e;
+
+  p.VA = address;
+  e = hash_find (&frame_table, &hash_elem);
+  return e != NULL ? hash_entry (e, struct frame, hash_elem) : NULL;
+}*/

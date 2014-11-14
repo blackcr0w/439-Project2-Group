@@ -35,9 +35,9 @@ syscall_handler (struct intr_frame *f)
   // only allow one syscall at a time (up at the end)
   struct thread *cur = thread_current ();
   
-
   // get the system call
   int * esp = f->esp;
+
   bad_pointer (esp);
 
   thread_current() -> stack = esp;
@@ -135,7 +135,6 @@ close_files()
 void
 bad_pointer(int *esp) 
 {
-
   struct thread *cur = thread_current ();
   
   // check if esp is a valid ptr at all
@@ -151,13 +150,14 @@ bad_pointer(int *esp)
     printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
     thread_exit ();
   }
-    
+//  printf("badddddddd");
+    /*
   // check if esp is unmapped
   if( pagedir_get_page (cur->pagedir, esp) == NULL )
   {
     printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
     thread_exit ();
-  }
+  }*/
 }
 
 //Jeff driving here
