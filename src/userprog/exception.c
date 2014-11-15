@@ -127,7 +127,7 @@ kill (struct intr_frame *f)
 static void
 page_fault (struct intr_frame *f) 
 {
-  // printf("Page Fault\n");
+  //  printf("Page Fault\n");
 
   bool not_present;  /* True: not-present page, false: writing r/o page. */
   bool write;        /* True: access was write, false: access was read. */
@@ -135,6 +135,7 @@ page_fault (struct intr_frame *f)
   void *fault_addr;  /* Fault address. */
 
   asm ("movl %%cr2, %0" : "=r" (fault_addr));
+  // printf("faulting address: %p\n", fault_addr);
 
   /* Turn interrupts back on (they were only off so that we could
      be assured of reading CR2 before it changed). */
@@ -147,8 +148,8 @@ page_fault (struct intr_frame *f)
      See [IA32-v2a] "MOV--Move to/from Control Registers" and
      [IA32-v3a] 5.15 "Interrupt 14--Page Fault Exception
      (#PF)". */
-
-
+ 
+ 
   /* Count page faults. */
   page_fault_cnt++;
 
@@ -157,7 +158,7 @@ page_fault (struct intr_frame *f)
   write =       (f->error_code & PF_W) != 0;
   user =        (f->error_code & PF_U) != 0;
 
-  int * esp = f->esp; //???save esp?
+  int * esp = f->esp;
 
   void * previous_page = pg_round_up (fault_addr);
   void * round_down_va = pg_round_down(fault_addr);
@@ -166,19 +167,12 @@ page_fault (struct intr_frame *f)
 
   struct page * p = page_lookup (round_down_va);
 
-  //  printf("\nafter pagefault %p\n", fault_addr);
-/* printf("\nESP %p\n", esp);
-   printf("\nfaulting address %p\n", fault_addr);
-     printf("\ncheck limit %p\n", check_limit);
-         printf("\nprev page %p\n", previous_page);*/
-
-  // lazy loading implementation
   int dif =  (int)esp -(int)fault_addr;
+
+ // printf ("Fault Address: %p\n", fault_addr);
    
-       //printf("\ncrap %d\n", dif);
   if(fault_addr >= (int)esp - 32 && user)
   { 
-      //printf("\ngggggggggggggggggg\n");
     if(fault_addr < check_limit)   // if va is greater than the 8MB limit, exit 
     {
       printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
@@ -192,14 +186,14 @@ page_fault (struct intr_frame *f)
     p_stack-> VA = thread_current ()-> stack_bottom;
     if (!install_page (p_stack -> VA, kpage, p_stack-> writable))  // puts mapping in page directory
     {
-      p_stack -> access = 0;
+      p_stack -> present = 0;
       p_stack -> in_frame_table = 0;
       palloc_free_page (kpage);
     }
     else
     {
       p_stack -> in_frame_table = 1;
-      p_stack -> access = 1;
+      p_stack -> present = 1;
       insert_page (p_stack);
       return;
     }
@@ -207,21 +201,18 @@ page_fault (struct intr_frame *f)
 
   if(p == NULL)
   {
-//printf("\nafter pagefault\n");
-    printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status); //trying to access data never asked for
+    printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status); //trying to present data never asked for
     thread_exit ();
   }
-//printf("\naccess %d\n", p -> access);
-  if(p -> access == 0) //if memory has not yet been allocated for this page then allocate it
+  if(p -> present == 0) //if memory has not yet been allocated for this page then allocate it
   {
     void *kpage = get_new_frame (p);  // get a physical memory spot for the faulting process
-    // printf("\nptakatataktakta %p\n", p-> VA);
 
     // Load this page. 
     if (file_read_at (p -> file, kpage, p -> page_read_bytes, p -> ofs) 
           != (int) p -> page_read_bytes)
     {
-      p -> access = 0;
+      p -> present = 0;
       p -> in_frame_table = 0;
       palloc_free_page (kpage); //if didn't read what happens
       thread_exit ();
@@ -232,24 +223,24 @@ page_fault (struct intr_frame *f)
     // Add the page to the process's address space. 
     if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
     {
-      p -> access = 0;
+      p -> present = 0;
       p -> in_frame_table = 0;
       palloc_free_page (kpage);
     }
     else
     {
-      p -> access = 1;
+      p -> present = 1;
       p -> in_frame_table = 1;
       return;
     }   
   }
 
-  else //if it is in swap
+  else if(!p->in_frame_table)//if it is in swap
   { 
     void *kpage = get_new_frame (p);
     if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
     {
-      p -> access = 0;
+      p -> present = 0;
       p -> in_frame_table = 0;
       palloc_free_page (kpage);
     }
@@ -257,16 +248,16 @@ page_fault (struct intr_frame *f)
     {
       insert_frame (p->frame_ptr);
       p -> in_frame_table = 1;
-      p -> access = 1;
-      hash_delete (&swap_table, &p->swap_elem);
+      p -> present = 1;
+      remove_swap (p);
       pagedir_set_dirty (thread_current ()->pagedir, p, 1); 
       return;
     }
   }
 
 
-  printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
-  thread_exit ();
+  // printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
+  // thread_exit ();
 
 
   /* To implement virtual memory, delete the rest of the function

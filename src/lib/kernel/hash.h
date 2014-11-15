@@ -109,4 +109,4 @@ unsigned hash_int (int);
 /* Returns the page containing the given virtual address,
    or a null pointer if no such page exists. */
 struct page *
-page_lookup (const void *address);
+page_lookup (void *address);

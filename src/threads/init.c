@@ -1,4 +1,5 @@
 #include "vm/frame.h"
+#include "vm/swap.h"
 
 #include "threads/init.h"
 #include <console.h>
@@ -12,12 +13,12 @@
 #include <string.h>
 #include "devices/kbd.h"
 #include "devices/input.h"
-#include "devices/serial.h"
-#include "devices/shutdown.h"
+#include "devices/serial.h" 
+#include "devices/shutdown.h" 
 #include "devices/timer.h"
 #include "devices/vga.h"
 #include "devices/rtc.h"
-#include "threads/interrupt.h"
+#include "threads/interrupt.h" 
 #include "threads/io.h"
 #include "threads/loader.h"
 #include "threads/malloc.h"
@@ -103,7 +104,7 @@ main (void)
   malloc_init ();
   paging_init ();
 
-  init_frame_table ();//frame init data structure
+  init_frame_table (); // frame init data structure
   init_swap_table ();
   /* Segmentation. */
 #ifdef USERPROG

@@ -1,42 +1,35 @@
-10/6 5:00 pm -7:00pm Dakota, Spencer, Jeff, Cohen, 2 hours
+10/27 5:00 pm -7:00pm Dakota, Spencer, Jeff, Cohen, 2 hours
 Driver Order and Time Length
 Dakota, 30 minutes
 Spencer, 30 minutes
 Cohen, 30 mintues
 Jeff, 30 minutes 
 
-10/7 2:00pm -3:30 pm Dakota, Spencer, Jeff, Cohen, 1.5 hours
+10/28 2:00pm -3:30 pm Dakota, Spencer, Jeff, Cohen, 1.5 hours
 Driver Order and Time Length
 Spencer, 30 minutes
 Dakota, 30 minutes
 Cohen, 15 minutes
 Jeff, 15 minutes
 
-10/7  3:30pm - 5:00pm Dakota, Spencer, Jeff,  1.5 hours
+10/29  3:30pm - 5:00pm Dakota, Spencer, Jeff,  1.5 hours
 Driver Order and Time Length
 Jeff, 15 minutes
 Dakota, 30 minutes
 Spencer, 30 minutes
 Jeff, 15 minutes
 
-10/7 5:00pm- 8:00pm Dakota, Spencer, Jeff, Cohen, 3 hours
+10/30 5:00pm- 8:00pm Dakota, Spencer, Jeff, Cohen, 3 hours
 Driver Order and Time Length
+Jeff, 30 minutes
+Cohen, 30 minutes
+Dakota 15 minutes
 Jeff, 15 minutes
 Cohen, 30 minutes 
 Dakota 30 minutes
 Spencer 30 minutes
-Jeff, 30 minutes
-Cohen, 30 minutes
-Dakota 15 minutes
 
-10/8 12:00 pm -2:00 pm Dakota, Spencer, Jeff, Cohen, 2 hours 
-Driver Order and Time Length
-Dakota, 30 minutes
-Spencer, 30 minutes
-Jeff, 30 minutes
-Cohen, 30 minutes
-
-10/8 4:00pm -7:00 pm Dakota, Cohen, 3 hours
+10/31 4:00pm -7:00 pm Dakota, Cohen, 3 hours
 Driver Order and Time Length
 Dakota, 30 minutes
 Cohen, 30 minutes
@@ -45,19 +38,12 @@ Cohen, 30 minutes
 Dakota, 30 minutes
 Cohen, 30 minutes 
 
-10/9 2:00pm -3:30 pm Dakota, Spencer, Jeff, Cohen, 1.5 hours
+11/1 2:00pm -3:30 pm Dakota, Spencer, Jeff, Cohen, 1.5 hours
 Driver Order and Time Length
 Jeff, 30 minutes
 Spencer, 30 minutes
 Cohen, 15 minutes
 Dakota, 15 minutes
-
-10/9  3:30pm - 5:00pm Dakota, Spencer, Jeff,  1.5 hours
-Driver Order and Time Length
-Jeff, 15 minutes
-Spencer, 30 minutes
-Dakota, 30 minutes
-Jeff, 15 minutes
 
 10/9 5:00pm- 8:00pm Dakota, Spencer, Jeff, Cohen, 3 hours
 Driver Order and Time Length

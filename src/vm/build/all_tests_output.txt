@@ -1,113 +1,118 @@
 -------------------------------------------
 ARGS-NONE 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32 -c ../../lib/string.c -o lib/string.o -g -msoft-float -O -fno-stack-protector -nostdinc -I../.. -I../../lib -I../../lib/kernel -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wsystem-headers -DUSERPROG -DFILESYS -DVM -MMD -MF lib/string.d
-/lusr/opt/gcc-4.2.4/bin/gcc -m32 -c ../../userprog/exception.c -o userprog/exception.o -g -msoft-float -O -fno-stack-protector -nostdinc -I../.. -I../../lib -I../../lib/kernel -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wsystem-headers -DUSERPROG -DFILESYS -DVM -MMD -MF userprog/exception.d
 /lusr/opt/gcc-4.2.4/bin/gcc -m32 -c ../../vm/frame.c -o vm/frame.o -g -msoft-float -O -fno-stack-protector -nostdinc -I../.. -I../../lib -I../../lib/kernel -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wsystem-headers -DUSERPROG -DFILESYS -DVM -MMD -MF vm/frame.d
 ld -melf_i386 -T threads/kernel.lds.s -o kernel.o threads/start.o threads/init.o threads/thread.o threads/switch.o threads/interrupt.o threads/intr-stubs.o threads/synch.o threads/palloc.o threads/malloc.o devices/pit.o devices/timer.o devices/kbd.o devices/vga.o devices/serial.o devices/block.o devices/partition.o devices/ide.o devices/input.o devices/intq.o devices/rtc.o devices/shutdown.o devices/speaker.o lib/debug.o lib/random.o lib/stdio.o lib/stdlib.o lib/string.o lib/arithmetic.o lib/ustar.o lib/kernel/debug.o lib/kernel/list.o lib/kernel/bitmap.o lib/kernel/hash.o lib/kernel/console.o userprog/process.o userprog/pagedir.o userprog/exception.o userprog/syscall.o userprog/gdt.o userprog/tss.o filesys/filesys.o filesys/free-map.o filesys/file.o filesys/directory.o filesys/inode.o filesys/fsutil.o vm/frame.o vm/page.o vm/swap.o
 objcopy -R .note -R .comment -S kernel.o kernel.bin
-rm -f libc.a
-ar r libc.a lib/debug.o lib/random.o lib/stdio.o lib/stdlib.o lib/string.o lib/arithmetic.o lib/ustar.o lib/user/debug.o lib/user/syscall.o lib/user/console.o
-ranlib libc.a
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/userprog/args.o tests/lib.o lib/user/entry.o libc.a -o tests/userprog/args-none
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/userprog/args-none -a args-none --swap-size=4 -- -q  -f run args-none < /dev/null 2> tests/userprog/args-none.errors > tests/userprog/args-none.output
 perl -I../.. ../../tests/userprog/args-none.ck tests/userprog/args-none tests/userprog/args-none.result
 pass tests/userprog/args-none
 -------------------------------------------
 ARGS-SINGLE 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/userprog/args.o tests/lib.o lib/user/entry.o libc.a -o tests/userprog/args-single
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/userprog/args-single -a args-single --swap-size=4 -- -q  -f run 'args-single onearg' < /dev/null 2> tests/userprog/args-single.errors > tests/userprog/args-single.output
 perl -I../.. ../../tests/userprog/args-single.ck tests/userprog/args-single tests/userprog/args-single.result
 pass tests/userprog/args-single
 -------------------------------------------
 ARGS-MULTIPLE 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/userprog/args.o tests/lib.o lib/user/entry.o libc.a -o tests/userprog/args-multiple
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/userprog/args-multiple -a args-multiple --swap-size=4 -- -q  -f run 'args-multiple some arguments for you!' < /dev/null 2> tests/userprog/args-multiple.errors > tests/userprog/args-multiple.output
 perl -I../.. ../../tests/userprog/args-multiple.ck tests/userprog/args-multiple tests/userprog/args-multiple.result
 pass tests/userprog/args-multiple
 -------------------------------------------
 CLOSE-STDIN 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/userprog/close-stdin.o tests/main.o tests/lib.o lib/user/entry.o libc.a -o tests/userprog/close-stdin
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/userprog/close-stdin -a close-stdin --swap-size=4 -- -q  -f run close-stdin < /dev/null 2> tests/userprog/close-stdin.errors > tests/userprog/close-stdin.output
 perl -I../.. ../../tests/userprog/close-stdin.ck tests/userprog/close-stdin tests/userprog/close-stdin.result
 pass tests/userprog/close-stdin
 -------------------------------------------
 CLOSE-STDOUT 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/userprog/close-stdout.o tests/main.o tests/lib.o lib/user/entry.o libc.a -o tests/userprog/close-stdout
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/userprog/close-stdout -a close-stdout --swap-size=4 -- -q  -f run close-stdout < /dev/null 2> tests/userprog/close-stdout.errors > tests/userprog/close-stdout.output
 perl -I../.. ../../tests/userprog/close-stdout.ck tests/userprog/close-stdout tests/userprog/close-stdout.result
 pass tests/userprog/close-stdout
 -------------------------------------------
 PT-GROW-STACK 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/pt-grow-stack.o tests/arc4.o tests/cksum.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/pt-grow-stack
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-grow-stack -a pt-grow-stack --swap-size=4 -- -q  -f run pt-grow-stack < /dev/null 2> tests/vm/pt-grow-stack.errors > tests/vm/pt-grow-stack.output
 perl -I../.. ../../tests/vm/pt-grow-stack.ck tests/vm/pt-grow-stack tests/vm/pt-grow-stack.result
 pass tests/vm/pt-grow-stack
 -------------------------------------------
 PT-GROW-PUSHA 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/pt-grow-pusha.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/pt-grow-pusha
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-grow-pusha -a pt-grow-pusha --swap-size=4 -- -q  -f run pt-grow-pusha < /dev/null 2> tests/vm/pt-grow-pusha.errors > tests/vm/pt-grow-pusha.output
 perl -I../.. ../../tests/vm/pt-grow-pusha.ck tests/vm/pt-grow-pusha tests/vm/pt-grow-pusha.result
 pass tests/vm/pt-grow-pusha
 -------------------------------------------
 PT-GROW-BAD 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/pt-grow-bad.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/pt-grow-bad
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-grow-bad -a pt-grow-bad --swap-size=4 -- -q  -f run pt-grow-bad < /dev/null 2> tests/vm/pt-grow-bad.errors > tests/vm/pt-grow-bad.output
 perl -I../.. ../../tests/vm/pt-grow-bad.ck tests/vm/pt-grow-bad tests/vm/pt-grow-bad.result
 pass tests/vm/pt-grow-bad
 -------------------------------------------
 PT-BIG-STK-OBJ 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/pt-big-stk-obj.o tests/arc4.o tests/cksum.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/pt-big-stk-obj
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-big-stk-obj -a pt-big-stk-obj --swap-size=4 -- -q  -f run pt-big-stk-obj < /dev/null 2> tests/vm/pt-big-stk-obj.errors > tests/vm/pt-big-stk-obj.output
 perl -I../.. ../../tests/vm/pt-big-stk-obj.ck tests/vm/pt-big-stk-obj tests/vm/pt-big-stk-obj.result
 pass tests/vm/pt-big-stk-obj
 -------------------------------------------
 PT-BAD-ADDR 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/pt-bad-addr.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/pt-bad-addr
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-bad-addr -a pt-bad-addr --swap-size=4 -- -q  -f run pt-bad-addr < /dev/null 2> tests/vm/pt-bad-addr.errors > tests/vm/pt-bad-addr.output
 perl -I../.. ../../tests/vm/pt-bad-addr.ck tests/vm/pt-bad-addr tests/vm/pt-bad-addr.result
 pass tests/vm/pt-bad-addr
 -------------------------------------------
 PT-BAD-READ 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/pt-bad-read.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/pt-bad-read
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-bad-read -a pt-bad-read -p ../../tests/vm/sample.txt -a sample.txt --swap-size=4 -- -q  -f run pt-bad-read < /dev/null 2> tests/vm/pt-bad-read.errors > tests/vm/pt-bad-read.output
 perl -I../.. ../../tests/vm/pt-bad-read.ck tests/vm/pt-bad-read tests/vm/pt-bad-read.result
 pass tests/vm/pt-bad-read
 -------------------------------------------
 PT-WRITE-CODE 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/pt-write-code.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/pt-write-code
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-write-code -a pt-write-code --swap-size=4 -- -q  -f run pt-write-code < /dev/null 2> tests/vm/pt-write-code.errors > tests/vm/pt-write-code.output
 perl -I../.. ../../tests/vm/pt-write-code.ck tests/vm/pt-write-code tests/vm/pt-write-code.result
-pass tests/vm/pt-write-code
+FAIL tests/vm/pt-write-code
+Output missing 'pt-write-code: exit(-1)' message.
 -------------------------------------------
 PT-WRITE-CODE2 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/pt-write-code-2.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/pt-write-code2
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-write-code2 -a pt-write-code2 -p ../../tests/vm/sample.txt -a sample.txt --swap-size=4 -- -q  -f run pt-write-code2 < /dev/null 2> tests/vm/pt-write-code2.errors > tests/vm/pt-write-code2.output
 perl -I../.. ../../tests/vm/pt-write-code2.ck tests/vm/pt-write-code2 tests/vm/pt-write-code2.result
-pass tests/vm/pt-write-code2
+FAIL tests/vm/pt-write-code2
+Kernel panic in run: PANIC at ../../userprog/exception.c:105 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0xc0028772 0xc002bca4 0xc002bfd0 0xc0021bbe 0xc0021cef 0xc0027c84 0xc002db43 0xc002d16b 0xc002c250 0xc002c5f8 0xc0021bbe 0xc0021cef 0x804a1f5 0x80480e7 0x8048750 0x8048784
+Translation of call stack:
+In kernel.o:
+0xc0028772: debug_panic (.../../lib/kernel/debug.c:38)
+0xc002bca4: kill (.../userprog/exception.c:110)
+0xc002bfd0: page_fault (.../userprog/exception.c:275)
+0xc0021bbe: intr_handler (..../threads/interrupt.c:367)
+0xc0021cef: intr_entry (threads/intr-stubs.S:38)
+0xc0027c84: memcpy (...ild/../../lib/string.c:16)
+0xc002db43: inode_read_at (...../../filesys/inode.c:243)
+0xc002d16b: file_read (...d/../../filesys/file.c:72)
+0xc002c250: read (...../userprog/syscall.c:285)
+0xc002c5f8: syscall_handler (.../../userprog/syscall.c:92)
+0xc0021bbe: intr_handler (..../threads/interrupt.c:367)
+0xc0021cef: intr_entry (threads/intr-stubs.S:38)
+In tests/vm/pt-write-code2:
+0x0804a1f5: read (...../lib/user/syscall.c:117)
+0x080480e7: test_main (...s/vm/pt-write-code-2.c:14)
+0x08048750: main (...ild/../../tests/main.c:13)
+0x08048784: _start (.../../../lib/user/entry.c:9)
+Translations of user virtual addresses above are based on a guess at
+the binary to use.  If this guess is incorrect, then those
+translations will be misleading.
 -------------------------------------------
 PT-GROW-STK-SC 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/pt-grow-stk-sc.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/pt-grow-stk-sc
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-grow-stk-sc -a pt-grow-stk-sc --swap-size=4 -- -q  -f run pt-grow-stk-sc < /dev/null 2> tests/vm/pt-grow-stk-sc.errors > tests/vm/pt-grow-stk-sc.output
 perl -I../.. ../../tests/vm/pt-grow-stk-sc.ck tests/vm/pt-grow-stk-sc tests/vm/pt-grow-stk-sc.result
 pass tests/vm/pt-grow-stk-sc
 -------------------------------------------
 PAGE-LINEAR 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/page-linear.o tests/arc4.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/page-linear
 pintos -v -k -T 300 --qemu  --filesys-size=2 -p tests/vm/page-linear -a page-linear --swap-size=4 -- -q  -f run page-linear < /dev/null 2> tests/vm/page-linear.errors > tests/vm/page-linear.output
 perl -I../.. ../../tests/vm/page-linear.ck tests/vm/page-linear tests/vm/page-linear.result
 FAIL tests/vm/page-linear
@@ -134,17 +139,46 @@ Differences in `diff -u' format:
 -------------------------------------------
 PAGE-PARALLEL 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/page-parallel.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/page-parallel
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/child-linear.o tests/arc4.o tests/lib.o lib/user/entry.o libc.a -o tests/vm/child-linear
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/page-parallel -a page-parallel -p tests/vm/child-linear -a child-linear --swap-size=4 -- -q  -f run page-parallel < /dev/null 2> tests/vm/page-parallel.errors > tests/vm/page-parallel.output
 perl -I../.. ../../tests/vm/page-parallel.ck tests/vm/page-parallel tests/vm/page-parallel.result
 FAIL tests/vm/page-parallel
-run: TIMEOUT after 61 seconds of wall-clock time - load average: 0.39, 0.50, 1.59
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (page-parallel) begin
+  (page-parallel) exec "child-linear"
+  (page-parallel) exec "child-linear"
+  (page-parallel) exec "child-linear"
+  (page-parallel) exec "child-linear"
+  (page-parallel) wait for child 0
+  (page-parallel) wait for child 1
+  (page-parallel) wait for child 2
+  (page-parallel) wait for child 3
+  (page-parallel) end
+Differences in `diff -u' format:
+  (page-parallel) begin
+  (page-parallel) exec "child-linear"
+  (page-parallel) exec "child-linear"
+- (page-parallel) exec "child-linear"
+- (page-parallel) exec "child-linear"
+- (page-parallel) wait for child 0
+- (page-parallel) wait for child 1
+- (page-parallel) wait for child 2
+- (page-parallel) wait for child 3
+- (page-parallel) end
++ Page fault at 0x80481e7: not present error reading page in user context.
++ There is no crying in Pintos!
++ child-linear: dying due to interrupt 0x0e (#PF Page-Fault Exception).
++ Interrupt 0x0e (#PF Page-Fault Exception) at eip=0x80481e7
++  cr2=080481e7 error=00000004
++  eax=000000c8 ebx=00000014 ecx=bfffff07 edx=0804bda0
++  esi=00073261 edi=bffffea6 esp=bffffe64 ebp=bffffe78
++  cs=001b ds=0023 es=0023 ss=0023
+
+(Process exit codes are excluded for matching purposes.)
 -------------------------------------------
 PAGE-MERGE-SEQ 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/page-merge-seq.o tests/arc4.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/page-merge-seq
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/child-sort.o tests/lib.o lib/user/entry.o libc.a -o tests/vm/child-sort
 pintos -v -k -T 300 --qemu  --filesys-size=2 -p tests/vm/page-merge-seq -a page-merge-seq -p tests/vm/child-sort -a child-sort --swap-size=4 -- -q  -f run page-merge-seq < /dev/null 2> tests/vm/page-merge-seq.errors > tests/vm/page-merge-seq.output
 perl -I../.. ../../tests/vm/page-merge-seq.ck tests/vm/page-merge-seq tests/vm/page-merge-seq.result
 FAIL tests/vm/page-merge-seq
@@ -201,5 +235,134 @@ Differences in `diff -u' format:
 -------------------------------------------
 PAGE-MERGE-PAR 
 
-/lusr/opt/gcc-4.2.4/bin/gcc -m32  -Wl,--build-id=none -nostdlib -static -Wl,-T,../../lib/user/user.lds tests/vm/page-merge-par.o tests/vm/parallel-merge.o tests/arc4.o tests/lib.o tests/main.o lib/user/entry.o libc.a -o tests/vm/page-merge-par
 pintos -v -k -T 300 --qemu  --filesys-size=2 -p tests/vm/page-merge-par -a page-merge-par -p tests/vm/child-sort -a child-sort --swap-size=4 -- -q  -f run page-merge-par < /dev/null 2> tests/vm/page-merge-par.errors > tests/vm/page-merge-par.output
+perl -I../.. ../../tests/vm/page-merge-par.ck tests/vm/page-merge-par tests/vm/page-merge-par.result
+FAIL tests/vm/page-merge-par
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (page-merge-par) begin
+  (page-merge-par) init
+  (page-merge-par) sort chunk 0
+  (page-merge-par) sort chunk 1
+  (page-merge-par) sort chunk 2
+  (page-merge-par) sort chunk 3
+  (page-merge-par) sort chunk 4
+  (page-merge-par) sort chunk 5
+  (page-merge-par) sort chunk 6
+  (page-merge-par) sort chunk 7
+  (page-merge-par) wait for child 0
+  (page-merge-par) wait for child 1
+  (page-merge-par) wait for child 2
+  (page-merge-par) wait for child 3
+  (page-merge-par) wait for child 4
+  (page-merge-par) wait for child 5
+  (page-merge-par) wait for child 6
+  (page-merge-par) wait for child 7
+  (page-merge-par) merge
+  (page-merge-par) verify
+  (page-merge-par) success, buf_idx=1,048,576
+  (page-merge-par) end
+Differences in `diff -u' format:
+  (page-merge-par) begin
+  (page-merge-par) init
+  (page-merge-par) sort chunk 0
+  (page-merge-par) sort chunk 1
+  (page-merge-par) sort chunk 2
+  (page-merge-par) sort chunk 3
+- (page-merge-par) sort chunk 4
+- (page-merge-par) sort chunk 5
+- (page-merge-par) sort chunk 6
+- (page-merge-par) sort chunk 7
+- (page-merge-par) wait for child 0
+- (page-merge-par) wait for child 1
+- (page-merge-par) wait for child 2
+- (page-merge-par) wait for child 3
+- (page-merge-par) wait for child 4
+- (page-merge-par) wait for child 5
+- (page-merge-par) wait for child 6
+- (page-merge-par) wait for child 7
+- (page-merge-par) merge
+- (page-merge-par) verify
+- (page-merge-par) success, buf_idx=1,048,576
+- (page-merge-par) end
++ Page fault at 0x804a245: not present error reading page in user context.
++ There is no crying in Pintos!
++ child-sort: dying due to interrupt 0x0e (#PF Page-Fault Exception).
++ Interrupt 0x0e (#PF Page-Fault Exception) at eip=0x804a245
++  cr2=0804a245 error=00000004
++  eax=00020000 ebx=bfffffe0 ecx=bfffffc8 edx=00000000
++  esi=00000000 edi=00000002 esp=bfffff78 ebp=bfffff88
++  cs=001b ds=0023 es=0023 ss=0023
+
+(Process exit codes are excluded for matching purposes.)
+-------------------------------------------
+PAGE-MERGE-STK 
+
+pintos -v -k -T 300 --qemu  --filesys-size=2 -p tests/vm/page-merge-stk -a page-merge-stk -p tests/vm/child-qsort -a child-qsort --swap-size=4 -- -q  -f run page-merge-stk < /dev/null 2> tests/vm/page-merge-stk.errors > tests/vm/page-merge-stk.output
+perl -I../.. ../../tests/vm/page-merge-stk.ck tests/vm/page-merge-stk tests/vm/page-merge-stk.result
+FAIL tests/vm/page-merge-stk
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (page-merge-stk) begin
+  (page-merge-stk) init
+  (page-merge-stk) sort chunk 0
+  (page-merge-stk) sort chunk 1
+  (page-merge-stk) sort chunk 2
+  (page-merge-stk) sort chunk 3
+  (page-merge-stk) sort chunk 4
+  (page-merge-stk) sort chunk 5
+  (page-merge-stk) sort chunk 6
+  (page-merge-stk) sort chunk 7
+  (page-merge-stk) wait for child 0
+  (page-merge-stk) wait for child 1
+  (page-merge-stk) wait for child 2
+  (page-merge-stk) wait for child 3
+  (page-merge-stk) wait for child 4
+  (page-merge-stk) wait for child 5
+  (page-merge-stk) wait for child 6
+  (page-merge-stk) wait for child 7
+  (page-merge-stk) merge
+  (page-merge-stk) verify
+  (page-merge-stk) success, buf_idx=1,048,576
+  (page-merge-stk) end
+Differences in `diff -u' format:
+  (page-merge-stk) begin
+  (page-merge-stk) init
+  (page-merge-stk) sort chunk 0
+  (page-merge-stk) sort chunk 1
+  (page-merge-stk) sort chunk 2
+  (page-merge-stk) sort chunk 3
+- (page-merge-stk) sort chunk 4
+- (page-merge-stk) sort chunk 5
+- (page-merge-stk) sort chunk 6
+- (page-merge-stk) sort chunk 7
+- (page-merge-stk) wait for child 0
+- (page-merge-stk) wait for child 1
+- (page-merge-stk) wait for child 2
+- (page-merge-stk) wait for child 3
+- (page-merge-stk) wait for child 4
+- (page-merge-stk) wait for child 5
+- (page-merge-stk) wait for child 6
+- (page-merge-stk) wait for child 7
+- (page-merge-stk) merge
+- (page-merge-stk) verify
+- (page-merge-stk) success, buf_idx=1,048,576
+- (page-merge-stk) end
++ Page fault at 0x80480cc: not present error reading page in user context.
++ There is no crying in Pintos!
++ child-qsort: dying due to interrupt 0x0e (#PF Page-Fault Exception).
++ Interrupt 0x0e (#PF Page-Fault Exception) at eip=0x80480cc
++  cr2=080480cc error=00000004
++  eax=bffffffb ebx=bfffffe0 ecx=bfffffc8 edx=00000000
++  esi=00000000 edi=00000000 esp=bffdff90 ebp=bfffffb8
++  cs=001b ds=0023 es=0023 ss=0023
+
+(Process exit codes are excluded for matching purposes.)
+-------------------------------------------
+PAGE-SHUFFLE 
+
+pintos -v -k -T 300 --qemu  --filesys-size=2 -p tests/vm/page-shuffle -a page-shuffle --swap-size=4 -- -q  -f run page-shuffle < /dev/null 2> tests/vm/page-shuffle.errors > tests/vm/page-shuffle.output
+perl -I../.. ../../tests/vm/page-shuffle.ck tests/vm/page-shuffle tests/vm/page-shuffle.result
+pass tests/vm/page-shuffle

@@ -104,8 +104,6 @@ thread_init (void)
 struct thread *
 get_thread_tid (tid_t tid)
 {
-  struct thread *current =  thread_current(); 
-
   struct list_elem *thread_elem;
 
   // loop through the children of currently running thread

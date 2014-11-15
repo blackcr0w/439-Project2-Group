@@ -303,7 +303,7 @@ hash_int (int i)
 {
   return hash_bytes (&i, sizeof i);
 }
-
+
 /* Returns the bucket in H that E belongs in. */
 static struct list *
 find_bucket (struct hash *h, struct hash_elem *e) 
@@ -436,7 +436,7 @@ remove_elem (struct hash *h, struct hash_elem *e)
 /* Returns the page containing the given virtual address,
    or a null pointer if no such page exists. */
 struct page *
-page_lookup (const void *address)
+page_lookup (void *address)
 {
   struct thread *t = thread_current();
 

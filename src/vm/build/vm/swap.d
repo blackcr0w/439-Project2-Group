@@ -6,4 +6,4 @@ vm/swap.o: ../../vm/swap.c ../../userprog/exception.h \
   ../../lib/kernel/list.h ../../threads/synch.h ../../lib/kernel/hash.h \
   ../../lib/kernel/list.h ../../threads/vaddr.h ../../threads/loader.h \
   ../../userprog/syscall.h ../../lib/kernel/hash.h ../../vm/swap.h \
-  ../../vm/page.h
+  ../../vm/page.h ../../devices/block.h

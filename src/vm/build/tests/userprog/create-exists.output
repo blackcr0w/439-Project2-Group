@@ -1,5 +1,5 @@
 Copying tests/userprog/create-exists to scratch partition...
-qemu -hda /tmp/gPQmv2KU_I.dsk -m 4 -net none -nographic -monitor null
+qemu -hda /tmp/95yV_eM6BM.dsk -m 4 -net none -nographic -monitor null
 PiLo hda1
 Loading.........
 Kernel command line: -q -f extract run create-exists
@@ -30,8 +30,8 @@ Executing 'create-exists':
 (create-exists) end
 create-exists: exit(0)
 Execution of 'create-exists' complete.
-Timer: 247 ticks
-Thread: 0 idle ticks, 229 kernel ticks, 18 user ticks
+Timer: 248 ticks
+Thread: 0 idle ticks, 229 kernel ticks, 19 user ticks
 hda2 (filesys): 133 reads, 226 writes
 hda3 (scratch): 100 reads, 2 writes
 hda4 (swap): 0 reads, 0 writes

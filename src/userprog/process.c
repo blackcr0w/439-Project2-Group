@@ -60,9 +60,8 @@ process_execute (const char *file_name)
   child->root = 0;
 
   if(!child == NULL)
-  {
     child->parent = cur;  // if the child exists set its parent to the current thread
-  }
+
   sema_down (&(cur->exec_block));
 
   if(child->load == 0)  // if load not successful
@@ -414,7 +413,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   done:
   /* We arrive here whether the load is successful or not. */
-  sema_up(&t->parent->exec_block);  //sema up on parents blocking on exec semaphore
+  sema_up(&t->parent->exec_block);  //sema up on parents blocking on exec semaphore 
 
   return success;
 }
@@ -513,7 +512,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
  
       struct page *p = malloc (sizeof (struct page)); //make a new page
 
-      p -> access = 0;
+      p -> present = 0;
 
       p -> file = file;
       p -> ofs = ofs;
@@ -528,7 +527,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   printf("ReadBytes in load is: %d\n", p->page_read_bytes);
   printf("ofs in load is: %d\n", p->ofs);*/
 
-//printf("lookup is %p\n\n", p->VA);
+//printf("lookup is %p\n", p->VA);
 //printf("pages is %p\n", file);
 
  //printf("\nStill Going2\n");
@@ -541,7 +540,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       zero_bytes -= page_zero_bytes;
       upage += PGSIZE;
       ofs += page_read_bytes;
-
+ 
     }
   return true;
 }
@@ -556,17 +555,11 @@ setup_stack (void **esp, char *file_name)
   uint8_t *kpage;
   bool success = false;
 
-  struct page *p = malloc (sizeof (struct page)); //make a new page
+  struct page *p = malloc (sizeof (struct page)); // make a new page
   p->VA = ((uint8_t *) PHYS_BASE) - PGSIZE;
   p->dirty = 0;
 
-  //insert_page(p);
-
-
   thread_current ()-> stack_bottom = p-> VA;
-//printf("\nStack bottom is %p\n", p->VA);
-
- // kpage = palloc_get_page (PAL_USER | PAL_ZERO);
 
  // worry about stack growth later
  kpage = get_new_frame (p);
@@ -585,9 +578,9 @@ setup_stack (void **esp, char *file_name)
   char *token, *save_ptr;       // for spliter
   char s[strlen (file_cpy)];
 
-  strlcpy(s, file_cpy, strlen (file_cpy)+1);  //moves cmdline copy into s, add 1 for null
+  strlcpy(s, file_cpy, strlen (file_cpy)+1);  // moves cmdline copy into s, add 1 for null
 
-  int count = -1;  //tracking number of arguments 
+  int count = -1;  // tracking number of arguments 
 
   // limiting number of characters on stack to 130
   char *args[130] = {NULL};
@@ -606,7 +599,7 @@ setup_stack (void **esp, char *file_name)
   int count_save = count;
   while(count >= 0)  // while still has args
   { 
-    int i;
+    int i; 
 
     myEsp--;
     *myEsp = NULL;  // store end nullcharacter on stack and decrement stack

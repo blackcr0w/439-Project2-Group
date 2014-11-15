@@ -1,12 +1,12 @@
 /*#include <debug.h>
 #include <list.h>
 #include <stdint.h>*/
-
+ 
 #include "vm/page.h"
 #include "kernel/hash.h"
 #include "threads/synch.h"
 
-struct frame
+struct frame 
 {
 	void * PA;	// physcial address
 
@@ -15,6 +15,8 @@ struct frame
 	struct hash_elem hash_elem;  // used to put in hash element
 
 	struct semaphore sema_evict; // manages synchronization in evicting frame
+
+	struct list_elem frame_elem; // for the frame table
 
 };
 
@@ -35,3 +37,5 @@ unsigned
 frame_hash (const struct hash_elem *h_elem, void *aux);
 
 void remove_frame (struct frame *f);
+
+void clear_thread_frames(void);

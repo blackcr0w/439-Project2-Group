@@ -15,7 +15,7 @@ struct page
 	void *VA; //where address is in virtual memory
 	//struct hash_elem hash_elem;  //used to put in hash element
 	int dirty;
-	int access;
+	int present;
 	int in_frame_table;
 	struct frame *frame_ptr;
 	struct hash_elem page_elem;

@@ -8,11 +8,44 @@
 #include "userprog/syscall.h"
 #include "kernel/hash.h"
 #include "vm/swap.h"
+#include "devices/block.h"
+
+
+struct bitmap *swap_table_map;
+
+// size relationships
+// page
+  // block
+      // sectors
+          // bits/bytes
 
 void 
 init_swap_table (void)
 {
-	hash_init (&swap_table, swap_hash, hash_swap_less, NULL);
+//  hash_init (&swap_table, swap_hash, hash_swap_less, NULL);
+  struct block *insertion_block = block_get_role(BLOCK_SWAP);
+
+  // called before OS intitializes swap (just get out of here)
+  if(insertion_block == NULL)
+    return;
+
+  // initialize the bitmap to number of needed bits
+  swap_block_sectors = insertion_block->size;
+
+
+  // get the number of sectors that make up a block
+  int sectors_per_block = insertion_block->size;
+
+  // intialize bitmap where each bit represents a sector
+  bitmap_create (sectors_per_block * BLOCK_SECTOR_SIZE / PGSIZE);
+
+  // each bit in the bitmap should represent one page
+
+
+
+  // 8 blocks per page *
+  // sectors that make up a block
+  // = number of necessary sectors per page
 }
 
 // delete
@@ -24,6 +57,11 @@ void remove_swap (struct page *p)
 // insert
 void insert_swap (struct page *p)
 {
+
+  // look into swap_table_map, starting at position 0, for enough space to fit the page
+  bitmap_scan_and_flip (swap_table_map, 0, 1, 0)
+
+  // printf ("GOT TO INSERT SWAP");
 	p -> in_frame_table = 0; 
 	hash_insert (&swap_table, &p->swap_elem);
 }
