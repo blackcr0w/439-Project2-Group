@@ -124,10 +124,10 @@ kill (struct intr_frame *f)
    can find more information about both of these in the
    description of "Interrupt 14--Page Fault Exception (#PF)" in
    [IA32-v3a] section 5.15 "Exception and Interrupt Reference". */
+//
 static void
 page_fault (struct intr_frame *f) 
 {
-  //  printf("Page Fault\n");
 
   bool not_present;  /* True: not-present page, false: writing r/o page. */
   bool write;        /* True: access was write, false: access was read. */
@@ -135,7 +135,6 @@ page_fault (struct intr_frame *f)
   void *fault_addr;  /* Fault address. */
 
   asm ("movl %%cr2, %0" : "=r" (fault_addr));
-  // printf("faulting address: %p\n", fault_addr);
 
   /* Turn interrupts back on (they were only off so that we could
      be assured of reading CR2 before it changed). */
@@ -150,7 +149,7 @@ page_fault (struct intr_frame *f)
      (#PF)". */
  
  
-  // printf ("Fault Address: %p\n", fault_addr);
+ //  printf ("Fault Address: %p\n", fault_addr);
   /* Count page faults. */
   page_fault_cnt++;
 
@@ -169,9 +168,8 @@ page_fault (struct intr_frame *f)
   struct page * p = page_lookup (round_down_va);
 
   int dif =  (int)esp -(int)fault_addr;
-
    
-  if(fault_addr >= (int)esp - 32 && user)
+  if(user && fault_addr >= (int)esp - 32)
   { 
     if(fault_addr < check_limit)   // if va is greater than the 8MB limit, exit 
     {
@@ -199,13 +197,16 @@ page_fault (struct intr_frame *f)
     }
   } 
 
+
   if(p == NULL)
   {
     printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status); //trying to present data never asked for
     thread_exit ();
   }
+
   if(p -> present == 0)  // if memory has not yet been allocated for this page then allocate it
   {
+   // printf("\nLAZY %p\n", fault_addr);
     void *kpage = get_new_frame (p);  // get a physical memory spot for the faulting process
 
     // Load this page. 
@@ -234,8 +235,6 @@ page_fault (struct intr_frame *f)
       return;
     }   
   }
-
-      // printf("got to before read_swap\n\n\n");
   else if(!p->in_frame_table) // if it is in swap
   { 
     void *kpage = get_new_frame (p);
@@ -256,7 +255,7 @@ page_fault (struct intr_frame *f)
       return;
     }
   }
-
+ 
 
   printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
   thread_exit ();

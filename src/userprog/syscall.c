@@ -26,8 +26,6 @@ syscall_init (void)
   sema_init (&sema_files, 1);
 }
 
-
-
 //Spencer and Jeff driving here
 static void
 syscall_handler (struct intr_frame *f) 

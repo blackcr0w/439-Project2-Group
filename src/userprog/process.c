@@ -165,25 +165,18 @@ process_exit (void)
     child->parent = NULL;
   } 
 
-  // WHY DOES IT HANG ON THE SEMAPHORE WITHOUT THE CHECK
-  // WHY DOES IT HANG ON THE PAGEDIR WITH THE CHECK
-  if(cur->parent != NULL /*&& !cur->parent->root*/) // if parent not dead tell them that this thread is about to die
+  if(cur->parent != NULL) // if parent not dead tell them that this thread is about to die
   {
-    // printf("\nhi %d\n", cur->parent->root);
-
     sema_up (&cur-> parent -> sema_parent_block);
     sema_down (&cur-> wait_block); // blocking so parent can get info first
-    // printf("\n\n\n\n\nPROCESS EXIT\n");
-    // MAY HAVE ISSUE WITH ROOT, MAYBE USE GLOBAL VARIABLE
   }
-  //clear_thread_frames();
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
+
   pd = cur->pagedir;
   if (pd != NULL) 
     {
-    // printf("\nhi %s\n", cur->name);
       /* Correct ordering here is crucial.  We must set
          cur->pagedir to NULL before switching page directories,
          so that a timer interrupt can't switch back to the
@@ -295,8 +288,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
   off_t file_ofs;
   bool success = false;
   int i;
-
-
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
@@ -481,6 +472,7 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
    Return true if successful, false if a memory allocation error
    or disk read error occurs. */
 
+// Dakota, Spencer, Jeff, and Cohen Driving for this method
 static bool
 load_segment (struct file *file, off_t ofs, uint8_t *upage,
               uint32_t read_bytes, uint32_t zero_bytes, bool writable) 
@@ -492,23 +484,12 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
      // init_page_table ();
   file_seek (file, ofs);
   while (read_bytes > 0 || zero_bytes > 0) 
-    { 
+  { 
       /* Calculate how to fill this page.
          We will read PAGE_READ_BYTES bytes from FILE
          and zero the final PAGE_ZERO_BYTES bytes. */
       size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
       size_t page_zero_bytes = PGSIZE - page_read_bytes;
-
-      /* Get a page of memory. */
-    //  uint8_t *kpage = palloc_get_page (PAL_USER);
-
-      //update supplemental
-
-  /*printf("\nFile in load is: %p\n", file);
-  printf("ReadBytes in load is: %d\n", page_read_bytes);
-  printf("ofs in load is: %d\n", ofs);*/
-
-
  
       struct page *p = malloc (sizeof (struct page)); //make a new page
 
@@ -520,28 +501,15 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       p -> page_read_bytes = page_read_bytes;
       p -> page_zero_bytes = page_zero_bytes;
       p -> writable = writable;
-
-//printf("Load Segment\n");
-//printf("file offset %d\n", ofs);
-    /* printf("File in load is: %p\n", p->file);
-  printf("ReadBytes in load is: %d\n", p->page_read_bytes);
-  printf("ofs in load is: %d\n", p->ofs);*/
-
-//printf("lookup is %p\n", p->VA);
-//printf("pages is %p\n", file);
-
- //printf("\nStill Going2\n");
+ 
       insert_page (p);
-      //if(page_lookup (p->VA) == NULL)
-     //   printf("\nlookup is NULL %p\n", page_lookup (p->VA) -> VA);
 
       /* Advance. */
       read_bytes -= page_read_bytes;
       zero_bytes -= page_zero_bytes;
       upage += PGSIZE;
       ofs += page_read_bytes;
- 
-    }
+  }
   return true;
 }
 

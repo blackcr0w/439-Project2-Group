@@ -39,26 +39,24 @@ init_swap_table (void)
 bool
 write_swap (struct page * p)
 {
-  printf("\n\n\nbegin write");
   // look into swap_table_map, starting at position 0, for enough space to fit the page
   int first_index = bitmap_scan_and_flip (swap_table_map, 0, 1, 0);
-  // printf("first index: %d\n\n", first_index);
   
+  // make sure disk has been initialized
+  if(swap == NULL)
+    return false;
+
   // set the p's starting index
   p->swap_index = first_index;
 
   // current spot in the buffer to write to
   uint32_t buffer_offset = 0;
 
-  if(swap == NULL)
-    return false;
-
-  p->block = swap;
+  // update page
   p->in_frame_table = 0;
 
   // get physical address of the page
   void * buffer = p->frame_ptr->PA;
-  // printf("buffer address: %p\n\n\n", buffer);
 
   // get each sector in the block
   uint32_t sector_index = first_index * sectors_per_page; // get the start index
@@ -70,89 +68,41 @@ write_swap (struct page * p)
 
     // shift the buffer for the next sector
     buffer_offset += BLOCK_SECTOR_SIZE; 
-    // printf("buffer offset+buffer address: %p\n\n\n", buffer_offset + buffer);
   }
-  // printf("\n\ngot to write swap\n\n");
   return true;
 }
 
 // read from the swap into the page
 void 
 read_swap (struct page * p)
-{ 
-  // printf("started to read\n\n\n");
-  uint32_t buffer_offset = 0;
+{
+  // get index to swap into
   uint32_t bitmap_index = p-> swap_index;
-    
+  ASSERT (bitmap_index!=-2)  // should be reset, never -2
+  
+  uint32_t buffer_offset = 0;
+
   // get physical address of the page
   void * buffer = p->frame_ptr->PA;
 
- // get each sector in the block
+  // get each sector in the block
   uint32_t sector_index = bitmap_index * sectors_per_page; // get the start index
   uint32_t limit = sector_index + sectors_per_page;
   for(; sector_index < limit; sector_index++)
   {
-    // printf("started to loop read %d: \n\n", sector_index);
     // write to the block
-    block_read (p->block, sector_index, buffer+buffer_offset);
+    block_read (swap, sector_index, buffer+buffer_offset);
 
     // shift the buffer for the next sector
     buffer_offset += BLOCK_SECTOR_SIZE;
   }
-  // printf("buffer offset: %d\n\n\n\n", buffer_offset); // always 4K
   delete_swap (p);
 }
 
 // delete from swap
 void delete_swap (struct page * p)
 {
-  // printf("bitmap size: %d\n", bitmap_size(swap_table_map));
-  // printf("p->swap_index: %d\n\n", p->swap_index);
-  bitmap_set (swap_table_map, p->swap_index, 0); 
+  bitmap_set (swap_table_map, p->swap_index, 0);
+
+  p->swap_index = -2;
 }
-
-
-
-
-
-
-
-
-
-/*
-
-
-// delete
-void remove_swap (struct page *p)
-{
-  hash_delete (&swap_table, &p->swap_elem);
-}
-
-// insert
-void insert_swap (struct page *p)
-{
-
-
-  // printf ("GOT TO INSERT SWAP");
-	p -> in_frame_table = 0; 
-	hash_insert (&swap_table, &p->swap_elem);
-}
-
-bool
-hash_swap_less (const struct hash_elem *h1, const struct hash_elem *h2,
-           void *aux UNUSED)
-{
-  const struct page *p1 = hash_entry (h1, struct page, swap_elem);
-  const struct page *p2 = hash_entry (h2, struct page, swap_elem);
-
-  return p1->VA < p2->VA;
-}
-
-unsigned
-swap_hash (const struct hash_elem *s_elem, void *aux UNUSED)
-{
-  const struct page *p = hash_entry (s_elem, struct page, swap_elem);
-  return hash_bytes (&p->VA, sizeof p->VA);
-}
-
-*/

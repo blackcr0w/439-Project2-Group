@@ -5,18 +5,14 @@
 #include <list.h>
 #include <stdint.h>
 #include "kernel/hash.h"
-// #include "vm/frame.h"
-
-
-
 
 struct page
 {
-	void *VA; //where address is in virtual memory
-	//struct hash_elem hash_elem;  //used to put in hash element
-	int dirty;
-	int present;
-	int in_frame_table;
+	void *VA;  // where address is in virtual memory
+
+	int dirty;  
+	int present;  // page has been previously loaded in memory
+	int in_frame_table;  // if in
 	struct frame *frame_ptr;
 	struct hash_elem page_elem;
 	struct hash_elem swap_elem;
@@ -25,7 +21,7 @@ struct page
 
 	struct file *file;
 	int ofs;
-	// int *upage;
+
 	int page_read_bytes;
 	int page_zero_bytes;
 	bool writable;

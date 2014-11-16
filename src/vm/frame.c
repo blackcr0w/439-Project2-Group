@@ -17,23 +17,18 @@
 // prevent multiple pages from getting the same frame
 static struct semaphore sema_get_frame;
 
-// struct hash frame_table;
-// struct hash_iterator i;
 struct list frame_table_list; // the list for the frame table
 void *curr_ptr; // where we are currently looking at (frame table)
 
 void 
 insert_frame (struct frame *f)
 {	
-	// hash_insert (&frame_table, &f->hash_elem); // hash
 	list_push_back (&frame_table_list, &f->frame_elem);
 }
    
 void 
 init_frame_table (void)  
 {
-	// hash_init (&frame_table, frame_hash, hash_less, NULL); // hash
-    // hash_first (&i, &frame_table); // hash
     list_init (&frame_table_list);
     curr_ptr = NULL;
     sema_init (&sema_get_frame, 1);
@@ -51,7 +46,6 @@ get_new_frame (struct page *p)  // pass in the page so that you can access it
 	sema_init (&f->sema_evict, 1);
   
 	// map that frame to the given page
-
 	p -> frame_ptr = f;
 
 	void * palloc_address = palloc_get_page (PAL_USER |  PAL_ZERO);
@@ -68,16 +62,9 @@ get_new_frame (struct page *p)  // pass in the page so that you can access it
 		f->PA = palloc_address;	
 
 	f->page_ptr = p;
-  	// printf("\nMAPPING FROM GET_NEW_FRAME Pointer to Frame: %p\n", f);
-  	 // printf("MAPPING FROM GET_NEW_FRAME Pointer to Page: %p\n", f->page_ptr->VA);
 
 	insert_frame (f);
 	sema_up (&sema_get_frame);
-		// printf("\nhiiiiiiiiiiiiiii\n");
-
-	// struct hash_elem * result = hash_find (&frame_table, &f->hash_elem); 
-	// if(result!=NULL)
-		// printf("I FOUND %p\n\n\n", f);
 
 	return f->PA; 
 }
@@ -170,17 +157,14 @@ evict_page ()
 */ 
 	struct list_elem *front = list_begin (&frame_table_list);
 
-	struct frame *f = list_entry(front, struct frame, frame_elem);
+	struct frame *f = malloc (sizeof (struct frame));
+	f = list_entry(front, struct frame, frame_elem);
 
-//	sema_down (&f->sema_evict);
-	// printf("\nEVICTION Pointer to Frame VA %p\n", f);
-  	// printf("EVICTION Pointer to Page VA %p\n", f->page_ptr->VA);
-
+	sema_down (&f->sema_evict);
 	list_pop_front (&frame_table_list); 
 
 	if(pagedir_is_dirty (thread_current ()->pagedir, f->page_ptr))
 	{
-		// printf ("\nIS DIRTY!\n");
 	  	write_swap (f->page_ptr);
 	  	f->page_ptr->present = 1;
 	}
@@ -188,32 +172,9 @@ evict_page ()
 		f->page_ptr->present = 0;
 
  	pagedir_clear_page (thread_current () ->pagedir, f->page_ptr->VA);
-	//remove_frame (f);
+
 	palloc_free_page (f->PA);
 	free (f);
+	sema_up (&f->sema_evict);
 
-	//printf("\nhiiiiiiiiiiiiiii\n");
-//	sema_up (&f->sema_evict);
 }
-
-/*void remove_frame (struct frame *f)
-{
-	hash_delete (&frame_table, &f->hash_elem);
-}
-
-bool
-hash_less (const struct hash_elem *h1, const struct hash_elem *h2,
-           void *aux UNUSED)
-{
-  const struct frame *f1 = hash_entry (h1, struct frame, hash_elem);
-  const struct frame *f2 = hash_entry (h2, struct frame, hash_elem);
-
-  return f1->PA < f2->PA;
-}
-
-unsigned
-frame_hash (const struct hash_elem *h_elem, void *aux UNUSED)
-{
-  const struct frame *f = hash_entry (h_elem, struct frame, hash_elem);
-  return hash_bytes (&f->PA, sizeof f->PA);
-}*/
