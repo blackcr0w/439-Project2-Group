@@ -12,6 +12,7 @@
 #include "kernel/hash.h"
 #include "vm/swap.h"
 #include <stdio.h>
+#include "userprog/pagedir.h"
 
 // prevent multiple pages from getting the same frame
 static struct semaphore sema_get_frame;
@@ -27,7 +28,7 @@ insert_frame (struct frame *f)
 	// hash_insert (&frame_table, &f->hash_elem); // hash
 	list_push_back (&frame_table_list, &f->frame_elem);
 }
-
+   
 void 
 init_frame_table (void)  
 {

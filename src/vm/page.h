@@ -30,7 +30,7 @@ struct page
 	int page_zero_bytes;
 	bool writable;
 
-	int start_swap_index; // beginning index of swap written to
+	int swap_index; // index in swap it is stored
 };
 #endif
 

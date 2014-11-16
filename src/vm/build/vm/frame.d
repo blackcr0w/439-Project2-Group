@@ -7,4 +7,4 @@ vm/frame.o: ../../vm/frame.c ../../threads/thread.h ../../lib/debug.h \
   ../../threads/loader.h ../../userprog/process.h ../../threads/thread.h \
   ../../vm/frame.h ../../vm/page.h ../../lib/kernel/hash.h \
   ../../threads/malloc.h ../../vm/swap.h ../../lib/stdio.h \
-  ../../lib/stdarg.h ../../lib/kernel/stdio.h
+  ../../lib/stdarg.h ../../lib/kernel/stdio.h ../../userprog/pagedir.h

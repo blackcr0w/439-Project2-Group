@@ -150,7 +150,7 @@ page_fault (struct intr_frame *f)
      (#PF)". */
  
  
-  printf ("Fault Address: %p\n", fault_addr);
+  // printf ("Fault Address: %p\n", fault_addr);
   /* Count page faults. */
   page_fault_cnt++;
 
@@ -204,7 +204,7 @@ page_fault (struct intr_frame *f)
     printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status); //trying to present data never asked for
     thread_exit ();
   }
-  if(p -> present == 0) //if memory has not yet been allocated for this page then allocate it
+  if(p -> present == 0)  // if memory has not yet been allocated for this page then allocate it
   {
     void *kpage = get_new_frame (p);  // get a physical memory spot for the faulting process
 
@@ -214,14 +214,14 @@ page_fault (struct intr_frame *f)
     {
       p -> present = 0;
       p -> in_frame_table = 0;
-      palloc_free_page (kpage); //if didn't read what happens
+      palloc_free_page (kpage);  // if didn't read what happens
       thread_exit ();
     }
   
     memset (kpage + (p -> page_read_bytes), 0, p -> page_zero_bytes);
 
     // Add the page to the process's address space. 
-    if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
+    if (!install_page (p -> VA, kpage, p -> writable))  // puts mapping in page directory
     {
       p -> present = 0;
       p -> in_frame_table = 0;
@@ -235,10 +235,11 @@ page_fault (struct intr_frame *f)
     }   
   }
 
-  else if(!p->in_frame_table)//if it is in swap
+      // printf("got to before read_swap\n\n\n");
+  else if(!p->in_frame_table) // if it is in swap
   { 
     void *kpage = get_new_frame (p);
-    if (!install_page (p -> VA, kpage, p -> writable))     //puts mapping in page directory
+    if (!install_page (p -> VA, kpage, p -> writable))  // puts mapping in page directory
     {
       p -> present = 0;
       p -> in_frame_table = 0;
@@ -246,7 +247,7 @@ page_fault (struct intr_frame *f)
     }
     else  
     {
-      read_swap(p);
+      read_swap (p);
       insert_frame (p->frame_ptr);
       p -> in_frame_table = 1;
       p -> present = 1;
@@ -257,8 +258,8 @@ page_fault (struct intr_frame *f)
   }
 
 
-  // printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
-  // thread_exit ();
+  printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
+  thread_exit ();
 
 
   /* To implement virtual memory, delete the rest of the function

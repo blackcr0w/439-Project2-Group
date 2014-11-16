@@ -69,38 +69,13 @@ PT-WRITE-CODE
 
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-write-code -a pt-write-code --swap-size=4 -- -q  -f run pt-write-code < /dev/null 2> tests/vm/pt-write-code.errors > tests/vm/pt-write-code.output
 perl -I../.. ../../tests/vm/pt-write-code.ck tests/vm/pt-write-code tests/vm/pt-write-code.result
-FAIL tests/vm/pt-write-code
-Output missing 'pt-write-code: exit(-1)' message.
+pass tests/vm/pt-write-code
 -------------------------------------------
 PT-WRITE-CODE2 
 
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/pt-write-code2 -a pt-write-code2 -p ../../tests/vm/sample.txt -a sample.txt --swap-size=4 -- -q  -f run pt-write-code2 < /dev/null 2> tests/vm/pt-write-code2.errors > tests/vm/pt-write-code2.output
 perl -I../.. ../../tests/vm/pt-write-code2.ck tests/vm/pt-write-code2 tests/vm/pt-write-code2.result
-FAIL tests/vm/pt-write-code2
-Kernel panic in run: PANIC at ../../userprog/exception.c:105 in kill(): Kernel bug - unexpected interrupt in kernel
-Call stack: 0xc0028772 0xc002bca4 0xc002bfd0 0xc0021bbe 0xc0021cef 0xc0027c84 0xc002db43 0xc002d16b 0xc002c250 0xc002c5f8 0xc0021bbe 0xc0021cef 0x804a1f5 0x80480e7 0x8048750 0x8048784
-Translation of call stack:
-In kernel.o:
-0xc0028772: debug_panic (.../../lib/kernel/debug.c:38)
-0xc002bca4: kill (.../userprog/exception.c:110)
-0xc002bfd0: page_fault (.../userprog/exception.c:276)
-0xc0021bbe: intr_handler (..../threads/interrupt.c:367)
-0xc0021cef: intr_entry (threads/intr-stubs.S:38)
-0xc0027c84: memcpy (...ild/../../lib/string.c:16)
-0xc002db43: inode_read_at (...../../filesys/inode.c:243)
-0xc002d16b: file_read (...d/../../filesys/file.c:72)
-0xc002c250: read (...../userprog/syscall.c:285)
-0xc002c5f8: syscall_handler (.../../userprog/syscall.c:92)
-0xc0021bbe: intr_handler (..../threads/interrupt.c:367)
-0xc0021cef: intr_entry (threads/intr-stubs.S:38)
-In tests/vm/pt-write-code2:
-0x0804a1f5: read (...../lib/user/syscall.c:117)
-0x080480e7: test_main (...s/vm/pt-write-code-2.c:14)
-0x08048750: main (...ild/../../tests/main.c:13)
-0x08048784: _start (.../../../lib/user/entry.c:9)
-Translations of user virtual addresses above are based on a guess at
-the binary to use.  If this guess is incorrect, then those
-translations will be misleading.
+pass tests/vm/pt-write-code2
 -------------------------------------------
 PT-GROW-STK-SC 
 
@@ -113,28 +88,34 @@ PAGE-LINEAR
 pintos -v -k -T 300 --qemu  --filesys-size=2 -p tests/vm/page-linear -a page-linear --swap-size=4 -- -q  -f run page-linear < /dev/null 2> tests/vm/page-linear.errors > tests/vm/page-linear.output
 perl -I../.. ../../tests/vm/page-linear.ck tests/vm/page-linear tests/vm/page-linear.result
 FAIL tests/vm/page-linear
-Kernel panic in run: PANIC at ../../lib/kernel/bitmap.c:299 in bitmap_scan(): assertion `b != NULL' failed.
-Call stack: 0xc0028772 0xc0029715 0xc0029abb 0xc002e7ac 0xc002e504 0xc002e61f 0xc002be42 0xc0021bbe 0xc0021cef 0x8049820 0x80480d2 0x8048930 0x8048964
-Translation of call stack:
-In kernel.o:
-0xc0028772: debug_panic (.../../lib/kernel/debug.c:38)
-0xc0029715: bitmap_scan (..../lib/kernel/bitmap.c:300)
-0xc0029abb: bitmap_scan_and_flip (..../lib/kernel/bitmap.c:323)
-0xc002e7ac: write_swap (.../build/../../vm/swap.c:59)
-0xc002e504: evict_page (...uild/../../vm/frame.c:184)
-0xc002e61f: get_new_frame (...build/../../vm/frame.c:62)
-0xc002be42: page_fault (.../userprog/exception.c:209)
-0xc0021bbe: intr_handler (..../threads/interrupt.c:367)
-0xc0021cef: intr_entry (threads/intr-stubs.S:38)
-In tests/vm/page-linear:
-0x08049820: memset (...ld/../../lib/string.c:286)
-0x080480d2: test_main (...tests/vm/page-linear.c:24)
-0x08048930: main (...ild/../../tests/main.c:13)
-0x08048964: _start (.../../../lib/user/entry.c:9)
-Translations of user virtual addresses above are based on a guess at
-the binary to use.  If this guess is incorrect, then those
-translations will be misleading.
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (page-linear) begin
+  (page-linear) initialize
+  (page-linear) read pass
+  (page-linear) read/modify/write pass one
+  (page-linear) read/modify/write pass two
+  (page-linear) read pass
+  (page-linear) end
+Differences in `diff -u' format:
+  (page-linear) begin
+  (page-linear) initialize
+- (page-linear) read pass
+- (page-linear) read/modify/write pass one
+- (page-linear) read/modify/write pass two
+- (page-linear) read pass
+- (page-linear) end
+
+(Process exit codes are excluded for matching purposes.)
 -------------------------------------------
 PAGE-PARALLEL 
 
 pintos -v -k -T 60 --qemu  --filesys-size=2 -p tests/vm/page-parallel -a page-parallel -p tests/vm/child-linear -a child-linear --swap-size=4 -- -q  -f run page-parallel < /dev/null 2> tests/vm/page-parallel.errors > tests/vm/page-parallel.output
+perl -I../.. ../../tests/vm/page-parallel.ck tests/vm/page-parallel tests/vm/page-parallel.result
+FAIL tests/vm/page-parallel
+run: TIMEOUT after 61 seconds of wall-clock time - load average: 0.75, 0.64, 0.99
+-------------------------------------------
+PAGE-MERGE-SEQ 
+
+pintos -v -k -T 300 --qemu  --filesys-size=2 -p tests/vm/page-merge-seq -a page-merge-seq -p tests/vm/child-sort -a child-sort --swap-size=4 -- -q  -f run page-merge-seq < /dev/null 2> tests/vm/page-merge-seq.errors > tests/vm/page-merge-seq.output
