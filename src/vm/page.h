@@ -10,21 +10,18 @@ struct page
 {
 	void *VA;  // where address is in virtual memory
 
-	int dirty;  
+	int dirty;  // if it has been changed
 	int present;  // page has been previously loaded in memory
-	int in_frame_table;  // if in
-	struct frame *frame_ptr;
-	struct hash_elem page_elem;
-	struct hash_elem swap_elem;
+	int in_frame_table;  // if in the frame table
+	struct frame *frame_ptr; // pointer to related from (for mapping)
+	struct hash_elem page_elem; // used for the supplemntal page table
 
-	void *block;
+	struct file *file; // info to read into memory (for loading)
+	int ofs; // offset
 
-	struct file *file;
-	int ofs;
-
-	int page_read_bytes;
-	int page_zero_bytes;
-	bool writable;
+	int page_read_bytes; // used for reading
+	int page_zero_bytes; // used for reading
+	bool writable; // dictates if it is read only or can be written to
 
 	int swap_index; // index in swap it is stored
 };

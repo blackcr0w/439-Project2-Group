@@ -17,7 +17,7 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-//#include "vm/frame.h"
+#include "vm/frame.h"
 #include "vm/page.h"
 
 static thread_func start_process NO_RETURN;
@@ -529,8 +529,7 @@ setup_stack (void **esp, char *file_name)
 
   thread_current ()-> stack_bottom = p-> VA;
 
- // worry about stack growth later
- kpage = get_new_frame (p);
+  kpage = get_new_frame (p);
   
   ASSERT(kpage != NULL) // get_new_frame should handle eviction if necessary
   

@@ -18,7 +18,6 @@
 static struct semaphore sema_get_frame;
 
 struct list frame_table_list; // the list for the frame table
-void *curr_ptr; // where we are currently looking at (frame table)
 
 void 
 insert_frame (struct frame *f)
@@ -30,7 +29,6 @@ void
 init_frame_table (void)  
 {
     list_init (&frame_table_list);
-    curr_ptr = NULL;
     sema_init (&sema_get_frame, 1);
 }
 
@@ -87,7 +85,38 @@ get_new_frame (struct page *p)  // pass in the page so that you can access it
 
 void
 evict_page ()
-{ 
+{
+	struct list_elem *front = list_begin (&frame_table_list);
+
+	struct frame *f = malloc (sizeof (struct frame));
+	f = list_entry(front, struct frame, frame_elem);
+
+	sema_down (&f->sema_evict);
+	list_pop_front (&frame_table_list); 
+
+	if(pagedir_is_dirty (thread_current ()->pagedir, f->page_ptr))
+	{
+	  	if(!insert_swap (f->page_ptr))
+	  	{
+	  		printf ("unsuccessful write");
+	  		return;
+	  	}
+	  	f->page_ptr->present = 1;
+	}
+	else
+		f->page_ptr->present = 0;
+
+ 	pagedir_clear_page (thread_current () ->pagedir, f->page_ptr->VA);
+
+	palloc_free_page (f->PA);
+	free (f);
+	sema_up (&f->sema_evict);
+
+}
+
+
+
+
 	// Clock
 	// while we haven't found a page to evict
 /*	while (true)
@@ -155,26 +184,3 @@ evict_page ()
 	}
  
 */ 
-	struct list_elem *front = list_begin (&frame_table_list);
-
-	struct frame *f = malloc (sizeof (struct frame));
-	f = list_entry(front, struct frame, frame_elem);
-
-	sema_down (&f->sema_evict);
-	list_pop_front (&frame_table_list); 
-
-	if(pagedir_is_dirty (thread_current ()->pagedir, f->page_ptr))
-	{
-	  	write_swap (f->page_ptr);
-	  	f->page_ptr->present = 1;
-	}
-	else
-		f->page_ptr->present = 0;
-
- 	pagedir_clear_page (thread_current () ->pagedir, f->page_ptr->VA);
-
-	palloc_free_page (f->PA);
-	free (f);
-	sema_up (&f->sema_evict);
-
-}

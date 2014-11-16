@@ -5,8 +5,6 @@
 #include "devices/ide.h"
 #include "threads/malloc.h"
 
-
-
 /* List of all block devices. */
 static struct list all_blocks = LIST_INITIALIZER (all_blocks);
 
@@ -206,4 +204,3 @@ list_elem_to_block (struct list_elem *list_elem)
           ? list_entry (list_elem, struct block, list_elem)
           : NULL);
 }
-

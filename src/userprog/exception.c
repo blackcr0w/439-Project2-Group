@@ -12,10 +12,10 @@
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
-
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
-
+struct semaphore sema_swap; // keeps from evicting and getting into frame
+ 
 /* Registers handlers for interrupts that can be caused by user
    programs.
 
@@ -26,7 +26,7 @@ static void page_fault (struct intr_frame *);
    process.
 
    Page faults are an exception.  Here they are treated the same
-   way as other exceptions, but this will need to change to
+   way as other exceptions, but this will need to change to  
    implement virtual memory.
 
    Refer to [IA32-v3a] section 5.15 "Exception and Interrupt
@@ -124,11 +124,11 @@ kill (struct intr_frame *f)
    can find more information about both of these in the
    description of "Interrupt 14--Page Fault Exception (#PF)" in
    [IA32-v3a] section 5.15 "Exception and Interrupt Reference". */
-//
+// Spencer, Dakota, Jeff/Cheng and Cohen driving here
 static void
 page_fault (struct intr_frame *f) 
 {
-
+  sema_init (&sema_swap, 1);
   bool not_present;  /* True: not-present page, false: writing r/o page. */
   bool write;        /* True: access was write, false: access was read. */
   bool user;         /* True: access by user, false: access by kernel. */
@@ -156,7 +156,7 @@ page_fault (struct intr_frame *f)
   /* Determine cause. */
   not_present = (f->error_code & PF_P) == 0;
   write =       (f->error_code & PF_W) != 0;
-  user =        (f->error_code & PF_U) != 0;
+  user =        (f->error_code & PF_U) != 0; 
 
   int * esp = f->esp;
 
@@ -169,7 +169,7 @@ page_fault (struct intr_frame *f)
 
   int dif =  (int)esp -(int)fault_addr;
    
-  if(user && fault_addr >= (int)esp - 32)
+  if(user && fault_addr >= (int)esp - 32) 
   { 
     if(fault_addr < check_limit)   // if va is greater than the 8MB limit, exit 
     {
@@ -236,7 +236,8 @@ page_fault (struct intr_frame *f)
     }   
   }
   else if(!p->in_frame_table) // if it is in swap
-  { 
+  {
+    sema_down (&sema_swap);
     void *kpage = get_new_frame (p);
     if (!install_page (p -> VA, kpage, p -> writable))  // puts mapping in page directory
     {
@@ -246,14 +247,16 @@ page_fault (struct intr_frame *f)
     }
     else  
     {
-      read_swap (p);
+      remove_swap (p);
       insert_frame (p->frame_ptr);
       p -> in_frame_table = 1;
       p -> present = 1;
-      //remove_swap (p);
       pagedir_set_dirty (thread_current ()->pagedir, p, 1); 
+
+      sema_up (&sema_swap);
       return;
     }
+      sema_up (&sema_swap);
   }
  
 
