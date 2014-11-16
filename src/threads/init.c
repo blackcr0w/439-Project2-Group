@@ -105,7 +105,6 @@ main (void)
   paging_init ();
 
   init_frame_table (); // frame init data structure
-  init_swap_table ();
   /* Segmentation. */
 #ifdef USERPROG
   tss_init ();
@@ -134,6 +133,7 @@ main (void)
   filesys_init (format_filesys);
 #endif
 
+  init_swap_table ();
   printf ("Boot complete.\n");
   
   /* Run actions specified on kernel command line. */

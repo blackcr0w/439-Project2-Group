@@ -150,6 +150,7 @@ page_fault (struct intr_frame *f)
      (#PF)". */
  
  
+  printf ("Fault Address: %p\n", fault_addr);
   /* Count page faults. */
   page_fault_cnt++;
 
@@ -169,7 +170,6 @@ page_fault (struct intr_frame *f)
 
   int dif =  (int)esp -(int)fault_addr;
 
- // printf ("Fault Address: %p\n", fault_addr);
    
   if(fault_addr >= (int)esp - 32 && user)
   { 
@@ -244,12 +244,13 @@ page_fault (struct intr_frame *f)
       p -> in_frame_table = 0;
       palloc_free_page (kpage);
     }
-    else
+    else  
     {
+      read_swap(p);
       insert_frame (p->frame_ptr);
       p -> in_frame_table = 1;
       p -> present = 1;
-      remove_swap (p);
+      //remove_swap (p);
       pagedir_set_dirty (thread_current ()->pagedir, p, 1); 
       return;
     }

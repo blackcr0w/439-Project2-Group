@@ -21,12 +21,16 @@ struct page
 	struct hash_elem page_elem;
 	struct hash_elem swap_elem;
 
+	void *block;
+
 	struct file *file;
 	int ofs;
 	// int *upage;
 	int page_read_bytes;
 	int page_zero_bytes;
 	bool writable;
+
+	int start_swap_index; // beginning index of swap written to
 };
 #endif
 

@@ -12,3 +12,9 @@ void init_swap_table (void);
 void remove_swap (struct page *p);
 
 void insert_swap (struct page *p);
+
+bool write_swap (struct page * p);
+
+void read_swap (struct page * p);
+
+void delete_swap (struct page * p);

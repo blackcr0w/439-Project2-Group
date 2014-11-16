@@ -13,6 +13,9 @@
 #include "vm/swap.h"
 #include <stdio.h>
 
+// prevent multiple pages from getting the same frame
+static struct semaphore sema_get_frame;
+
 // struct hash frame_table;
 // struct hash_iterator i;
 struct list frame_table_list; // the list for the frame table
@@ -32,13 +35,15 @@ init_frame_table (void)
     // hash_first (&i, &frame_table); // hash
     list_init (&frame_table_list);
     curr_ptr = NULL;
-
+    sema_init (&sema_get_frame, 1);
 }
 
 void *
 get_new_frame (struct page *p)  // pass in the page so that you can access it
-{ 
+{
 	ASSERT(p!=NULL);	
+
+	sema_down (&sema_get_frame);
 
 	// make a new frame
 	struct frame *f = malloc (sizeof (struct frame));
@@ -66,6 +71,7 @@ get_new_frame (struct page *p)  // pass in the page so that you can access it
   	 // printf("MAPPING FROM GET_NEW_FRAME Pointer to Page: %p\n", f->page_ptr->VA);
 
 	insert_frame (f);
+	sema_up (&sema_get_frame);
 		// printf("\nhiiiiiiiiiiiiiii\n");
 
 	// struct hash_elem * result = hash_find (&frame_table, &f->hash_elem); 
@@ -174,7 +180,7 @@ evict_page ()
 	if(pagedir_is_dirty (thread_current ()->pagedir, f->page_ptr))
 	{
 		// printf ("\nIS DIRTY!\n");
-	  	insert_swap (f->page_ptr);
+	  	write_swap (f->page_ptr);
 	  	f->page_ptr->present = 1;
 	}
 	else
