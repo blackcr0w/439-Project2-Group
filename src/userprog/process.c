@@ -501,6 +501,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       p -> page_read_bytes = page_read_bytes;
       p -> page_zero_bytes = page_zero_bytes;
       p -> writable = writable;
+      p ->stack = 0;
  
       insert_page (p);
 
@@ -526,10 +527,14 @@ setup_stack (void **esp, char *file_name)
   struct page *p = malloc (sizeof (struct page)); // make a new page
   p->VA = ((uint8_t *) PHYS_BASE) - PGSIZE;
   p->dirty = 0;
+  p->present = 0;
+  p->stack = 1;
 
   thread_current ()-> stack_bottom = p-> VA;
 
   kpage = get_new_frame (p);
+
+  insert_page(p);
   
   ASSERT(kpage != NULL) // get_new_frame should handle eviction if necessary
   

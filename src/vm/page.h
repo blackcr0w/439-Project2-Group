@@ -15,6 +15,7 @@ struct page
 	int in_frame_table;  // if in the frame table
 	struct frame *frame_ptr; // pointer to related from (for mapping)
 	struct hash_elem page_elem; // used for the supplemntal page table
+	int stack;
 
 	struct file *file; // info to read into memory (for loading)
 	int ofs; // offset
