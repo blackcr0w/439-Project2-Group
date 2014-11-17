@@ -113,7 +113,9 @@ get_thread_tid (tid_t tid)
     struct thread *t = list_entry (thread_elem, struct thread, allelem);
    
     if (tid == t->tid)
+    {
       return t;
+    }   
   } 
 
   return NULL;

@@ -169,8 +169,6 @@ page_fault (struct intr_frame *f)
 
   int dif =  (int)esp -(int)fault_addr;
    
- // printf("faults address %p\n", fault_addr);
-
   if(user && fault_addr >= (int)esp - 32) 
   { 
     if(fault_addr < check_limit)   // if va is greater than the 8MB limit, exit 
@@ -199,17 +197,17 @@ page_fault (struct intr_frame *f)
     }
   } 
 
+
   if(p == NULL)
-  { 
+  {
     printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status); //trying to present data never asked for
     thread_exit ();
   }
 
   if(p -> present == 0)  // if memory has not yet been allocated for this page then allocate it
   {
-    printf("\nBeforea new frame\n");
+   // printf("\nLAZY %p\n", fault_addr);
     void *kpage = get_new_frame (p);  // get a physical memory spot for the faulting process
-      printf("Got passed a new frame\n");
 
     // Load this page. 
     if (file_read_at (p -> file, kpage, p -> page_read_bytes, p -> ofs) 
@@ -237,7 +235,7 @@ page_fault (struct intr_frame *f)
       return;
     }   
   }
-  else //if(!p->in_frame_table) // if it is in swap
+  else if(!p->in_frame_table) // if it is in swap
   {
     sema_down (&sema_swap);
     void *kpage = get_new_frame (p);
@@ -250,15 +248,15 @@ page_fault (struct intr_frame *f)
     else  
     {
       remove_swap (p);
-
+      insert_frame (p->frame_ptr);
       p -> in_frame_table = 1;
       p -> present = 1;
-      //pagedir_set_dirty (thread_current ()->pagedir, p, 1); 
+      pagedir_set_dirty (thread_current ()->pagedir, p, 1); 
 
       sema_up (&sema_swap);
       return;
     }
-    sema_up (&sema_swap);
+      sema_up (&sema_swap);
   }
  
 

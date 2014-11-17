@@ -13,8 +13,6 @@ struct frame
 	struct page *page_ptr; 		 // pointer to related page
 	struct semaphore sema_evict; // manages synchronization in evicting frame
 	struct list_elem frame_elem; // for the frame table
-
-	int cur_tid;
 };
 
 void insert_frame (struct frame *f); 	// inserts frame f into the frame table

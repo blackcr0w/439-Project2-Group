@@ -40,32 +40,28 @@ get_new_frame (struct page *p)  // pass in the page so that you can access it
 	sema_down (&sema_get_frame);
 
 	// make a new frame
-	struct frame *f = calloc (1 , sizeof (struct frame));
+	struct frame *f = malloc (sizeof (struct frame));
 	sema_init (&f->sema_evict, 1);
-
-	printf("Got Here: %p\n\n", p->VA);
   
 	// map that frame to the given page
+	p -> frame_ptr = f;
 
-	f -> cur_tid = thread_current() -> tid;
 	void * palloc_address = palloc_get_page (PAL_USER |  PAL_ZERO);
 
 	// if memory is full
 	if (palloc_address == NULL)
 	{
-
 		evict_page (); // make some memory available
 		f->PA = palloc_get_page (PAL_USER | PAL_ZERO);
 	}
+
 	// if memory is not full
 	else
 		f->PA = palloc_address;	
 
-	p -> frame_ptr = f;
-	f->page_ptr = p; 
+	f->page_ptr = p;
 
 	insert_frame (f);
-
 	sema_up (&sema_get_frame);
 
 	return f->PA; 
@@ -92,15 +88,13 @@ evict_page ()
 {
 	struct list_elem *front = list_begin (&frame_table_list);
 
-	struct frame *f = calloc (1, sizeof (struct frame));
+	struct frame *f = malloc (sizeof (struct frame));
 	f = list_entry(front, struct frame, frame_elem);
-
-	struct thread *occupied = get_thread_tid (f -> cur_tid);
 
 	sema_down (&f->sema_evict);
 	list_pop_front (&frame_table_list); 
 
-	/*if(pagedir_is_dirty (thread_current ()->pagedir, f->page_ptr))
+	if(pagedir_is_dirty (thread_current ()->pagedir, f->page_ptr))
 	{
 	  	if(!insert_swap (f->page_ptr))
 	  	{
@@ -109,19 +103,15 @@ evict_page ()
 	  	}
 	  	f->page_ptr->present = 1;
 	}
-	else*/
- 	pagedir_clear_page (occupied ->pagedir, f->page_ptr->VA);
-	if(!insert_swap (f->page_ptr))
-  	{
-  		printf ("unsuccessful write");
-  		return;
-  	}
-	f->page_ptr->present = 1;
+	else
+		f->page_ptr->present = 0;
 
+ 	pagedir_clear_page (thread_current () ->pagedir, f->page_ptr->VA);
 
+	palloc_free_page (f->PA);
+	free (f);
 	sema_up (&f->sema_evict);
-	palloc_free_page (pg_round_down(f->PA));
-	free (f);	
+
 }
 
 

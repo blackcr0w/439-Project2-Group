@@ -74,10 +74,11 @@ void
 remove_swap (struct page * p)
 {
   // get index to swap into
-  printf("IM READ\n\n\n\n");
   uint32_t bitmap_index = p-> swap_index;
   ASSERT (bitmap_index!=-2)  // should be reset, never -2
   
+  uint32_t buffer_offset = 0;
+
   // get physical address of the page
   void * buffer = p->frame_ptr->PA;
 
@@ -87,13 +88,11 @@ remove_swap (struct page * p)
   for(; sector_index < limit; sector_index++)
   {
     // write to the block
-    block_read (swap, sector_index, buffer);
+    block_read (swap, sector_index, buffer+buffer_offset);
 
     // shift the buffer for the next sector
-    buffer += BLOCK_SECTOR_SIZE;
+    buffer_offset += BLOCK_SECTOR_SIZE;
   }
-  p->frame_ptr->PA = buffer;
-  insert_frame (p->frame_ptr);
   delete_swap (p);
 }
 
