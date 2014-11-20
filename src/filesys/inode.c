@@ -115,13 +115,13 @@ inode_create (block_sector_t sector, off_t length)
       {
         if ((free_map_allocate (1, disk_inode -> sectors[i])) && i < 10)
         {
-           block_write (fs_device, disk_inode -> sectors[i], zeros);
+           block_write (fs_device, disk_inode -> sectors[i], zeros); // zeroing out?
         }
-        else if (free_map_allocate (1, disk_inode -> sectors[i]) && i < 123)
+        else if (free_map_allocate (1, disk_inode -> sectors[i]) && i < 123)  // make this a indirect sector
         {
           block_write (fs_device, disk_inode -> sectors[i], zeros);
         }
-        else if (free_map_allocate (1, disk_inode -> sectors[i]) && i == 124)
+        else if (free_map_allocate (1, disk_inode -> sectors[i]) && i == 124) // make this a double indirect
         {
           block_write (fs_device, disk_inode -> sectors[i], zeros);
         }
