@@ -15,10 +15,22 @@
 struct inode_disk
   {
     block_sector_t start;               /* First data sector. */
+   // block_sector_t doubly;  //pointer to doubly indirect inode
     off_t length;                       /* File size in bytes. */
     unsigned magic;                     /* Magic number. */
-    uint32_t unused[125];               /* Not used. */
+    //uint32_t unused[125];               /* Not used. */
+    block_sector_t sectors[125]; // pointers to sectors
+   // block_sector_t indirect[114];
+  //  block_sector_t doub;
+  //  struct indirect *indir_p;
+
   };
+
+struct indirect
+{
+  block_sector_t sec[128];
+};
+
 
 /* Returns the number of sectors to allocate for an inode SIZE
    bytes long. */
@@ -44,7 +56,7 @@ struct inode
    Returns -1 if INODE does not contain data for a byte at offset
    POS. */
 static block_sector_t
-byte_to_sector (const struct inode *inode, off_t pos) 
+byte_to_sector (const struct inode *inode, off_t pos) // math goes here for figuring out offset
 {
   ASSERT (inode != NULL);
   if (pos < inode->data.length)
@@ -73,6 +85,8 @@ bool
 inode_create (block_sector_t sector, off_t length)
 {
   struct inode_disk *disk_inode = NULL;
+  struct indirect *indirect = NULL;
+
   bool success = false;
 
   ASSERT (length >= 0);
@@ -80,27 +94,68 @@ inode_create (block_sector_t sector, off_t length)
   /* If this assertion fails, the inode structure is not exactly
      one sector in size, and you should fix that. */
   ASSERT (sizeof *disk_inode == BLOCK_SECTOR_SIZE);
+  ASSERT (sizeof *indirect == BLOCK_SECTOR_SIZE);
 
   disk_inode = calloc (1, sizeof *disk_inode);
+
   if (disk_inode != NULL)
     {
-      size_t sectors = bytes_to_sectors (length);
+      int i;
+      int j;
+      int k = 0;
+      size_t sectors = bytes_to_sectors (length); // make this non consecutive
+      int sec_save = sectors;
       disk_inode->length = length;
       disk_inode->magic = INODE_MAGIC;
-      if (free_map_allocate (sectors, &disk_inode->start)) 
+      
+      block_write (fs_device, sector, disk_inode);
+      static char zeros[BLOCK_SECTOR_SIZE];
+
+      for (i = 0;sec_save != 0; sec_save--, i++)
+      {
+        if ((free_map_allocate (1, disk_inode -> sectors[i])) && i < 10)
         {
-          block_write (fs_device, sector, disk_inode);
-          if (sectors > 0) 
-            {
-              static char zeros[BLOCK_SECTOR_SIZE];
-              size_t i;
-              
-              for (i = 0; i < sectors; i++) 
-                block_write (fs_device, disk_inode->start + i, zeros);
-            }
-          success = true; 
-        } 
-      free (disk_inode);
+           block_write (fs_device, disk_inode -> sectors[i], zeros);
+        }
+        else if (free_map_allocate (1, disk_inode -> sectors[i]) && i < 123)
+        {
+          block_write (fs_device, disk_inode -> sectors[i], zeros);
+        }
+        else if (free_map_allocate (1, disk_inode -> sectors[i]) && i == 124)
+        {
+          block_write (fs_device, disk_inode -> sectors[i], zeros);
+        }
+        else
+          return false;
+      }
+/*
+       block_write (fs_device, sector, disk_inode);
+            if (sectors > 0) 
+              {
+                static char zeros[BLOCK_SECTOR_SIZE];
+                size_t i;
+                
+                for (i = 0; i < sectors; i++) 
+                  block_write (fs_device, disk_inode->start + i, zeros);
+              }
+            success = true; */
+/*
+      if (free_map_allocate (sectors, &disk_inode->start)) 
+      {
+        block_write (fs_device, sector, disk_inode);
+        if (sectors > 0) 
+          {
+            static char zeros[BLOCK_SECTOR_SIZE];
+            size_t i;
+            
+            for (i = 0; i < sectors; i++) 
+              block_write (fs_device, disk_inode->start + i, zeros);
+          }
+        success = true; 
+      } 
+    free (disk_inode);
+*/
+
     }
   return success;
 }
