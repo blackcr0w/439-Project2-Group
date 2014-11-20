@@ -6,10 +6,8 @@
    See hash.h for basic information. */
 
 #include "hash.h"
-#include "vm/frame.h"
 #include "../debug.h"
 #include "threads/malloc.h"
-#include "threads/thread.h"
 
 #define list_elem_to_hash_elem(LIST_ELEM)                       \
         list_entry(LIST_ELEM, struct hash_elem, list_elem)
@@ -30,10 +28,9 @@ hash_init (struct hash *h,
   h->elem_cnt = 0;
   h->bucket_cnt = 4;
   h->buckets = malloc (sizeof *h->buckets * h->bucket_cnt);
-
   h->hash = hash;
   h->less = less;
-  h->aux = aux; 
+  h->aux = aux;
 
   if (h->buckets != NULL) 
     {
@@ -303,12 +300,11 @@ hash_int (int i)
 {
   return hash_bytes (&i, sizeof i);
 }
-
+
 /* Returns the bucket in H that E belongs in. */
 static struct list *
 find_bucket (struct hash *h, struct hash_elem *e) 
 {
-  //printf("\n\n\n\nhehehehe\n\n\n\n\n");
   size_t bucket_idx = h->hash (e, h->aux) & (h->bucket_cnt - 1);
   return &h->buckets[bucket_idx];
 }
@@ -432,44 +428,3 @@ remove_elem (struct hash *h, struct hash_elem *e)
   list_remove (&e->list_elem);
 }
 
-/** Referenced from Pintos Page **/
-/* Returns the page containing the given virtual address,
-   or a null pointer if no such page exists. */
-struct page *
-page_lookup (void *address)
-{
-  struct thread *t = thread_current();
-
-  struct page p;
-  struct hash_elem *e;
-
-  p.VA = address;
-  e = hash_find (&t -> page_table, &p.page_elem);
-  return e != NULL ? hash_entry (e, struct page, page_elem) : NULL;
-}
-/*
-struct page *
-page_lookup_st (const void *address)
-{
-  struct thread *t = thread_current();
-
-  struct page p;
-  struct hash_elem *e;
-
-  p.VA = address;
-  e = hash_find (&swap_table, &p.swap_elem);
-  return e != NULL ? hash_entry (e, struct page, swap_elem) : NULL;
-}
-
-struct frame *
-page_lookup_ft (const void *address)
-{
-  struct thread *t = thread_current();
-
-  struct frame f;
-  struct hash_elem *e;
-
-  p.VA = address;
-  e = hash_find (&frame_table, &hash_elem);
-  return e != NULL ? hash_entry (e, struct frame, hash_elem) : NULL;
-}*/

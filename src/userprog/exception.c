@@ -6,16 +6,50 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "userprog/syscall.h"
-#include "threads/palloc.h"
-#include "vm/page.h"
-#include "vm/swap.h"
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
+
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
-struct semaphore sema_swap; // keeps from evicting and getting into frame
- 
+//static void bad_pointer(int* esp);
+
+//checks if bad pointer is passed in
+/*static void
+bad_pointer(int *esp) 
+{
+ //printf("check if %p is a bad pointer...\n", esp);
+  // if(*esp == 0x20101234)
+    // ASSERT(0);
+    // printf("i\n\n\n\n got here");
+
+  struct thread *cur = thread_current();
+  
+  // check if esp is a valid ptr at all
+  if(esp == NULL) //need to check for unmapped
+  {
+    // printf("\n\n\nBAAAD SPOT1\n\n\n");
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+    thread_exit();
+  }
+
+  // make sure esp is in the user address space
+  if(is_kernel_vaddr(esp))
+  {
+    // printf("\n\n\nBAAAD SPOT2\n\n\n");
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+    thread_exit();
+  }
+    
+  // check if esp is unmapped
+  if(pagedir_get_page(cur->pagedir, esp) == NULL)
+  {
+    // printf("\n\n\nBAAAD SPOT3\n\n\n");
+    printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
+    thread_exit();
+  }
+}*/
+
 /* Registers handlers for interrupts that can be caused by user
    programs.
 
@@ -26,7 +60,7 @@ struct semaphore sema_swap; // keeps from evicting and getting into frame
    process.
 
    Page faults are an exception.  Here they are treated the same
-   way as other exceptions, but this will need to change to  
+   way as other exceptions, but this will need to change to
    implement virtual memory.
 
    Refer to [IA32-v3a] section 5.15 "Exception and Interrupt
@@ -71,7 +105,7 @@ exception_print_stats (void)
 {
   printf ("Exception: %lld page faults\n", page_fault_cnt);
 }
- 
+
 /* Handler for an exception (probably) caused by a user process. */
 static void
 kill (struct intr_frame *f) 
@@ -124,21 +158,13 @@ kill (struct intr_frame *f)
    can find more information about both of these in the
    description of "Interrupt 14--Page Fault Exception (#PF)" in
    [IA32-v3a] section 5.15 "Exception and Interrupt Reference". */
-// Spencer, Dakota, Jeff/Cheng and Cohen driving here
 static void
 page_fault (struct intr_frame *f) 
 {
-  sema_init (&sema_swap, 1);
   bool not_present;  /* True: not-present page, false: writing r/o page. */
   bool write;        /* True: access was write, false: access was read. */
   bool user;         /* True: access by user, false: access by kernel. */
   void *fault_addr;  /* Fault address. */
-
-  asm ("movl %%cr2, %0" : "=r" (fault_addr));
-
-  /* Turn interrupts back on (they were only off so that we could
-     be assured of reading CR2 before it changed). */
-  intr_enable ();  
 
   /* Obtain faulting address, the virtual address that was
      accessed to cause the fault.  It may point to code or to
@@ -147,122 +173,25 @@ page_fault (struct intr_frame *f)
      See [IA32-v2a] "MOV--Move to/from Control Registers" and
      [IA32-v3a] 5.15 "Interrupt 14--Page Fault Exception
      (#PF)". */
- 
- 
- //  printf ("Fault Address: %p\n", fault_addr);
+
+  int * esp = f->esp;
+  bad_pointer(esp+1);
+  bad_pointer(*(esp+1));
+  //bad_pointer(esp+3);
+
+  asm ("movl %%cr2, %0" : "=r" (fault_addr));
+
+  /* Turn interrupts back on (they were only off so that we could
+     be assured of reading CR2 before it changed). */
+  intr_enable ();
+
   /* Count page faults. */
   page_fault_cnt++;
 
   /* Determine cause. */
   not_present = (f->error_code & PF_P) == 0;
-  write =       (f->error_code & PF_W) != 0;
-  user =        (f->error_code & PF_U) != 0; 
-
-  int * esp = f->esp;
-
-  void * previous_page = pg_round_up (fault_addr);
-  void * round_down_va = pg_round_down(fault_addr);
-
-  char *check_limit = PHYS_BASE + PGSIZE - MB8;
-
-  struct page * p = page_lookup (round_down_va);
-
-  int dif =  (int)esp -(int)fault_addr;
-   
-  if(user && fault_addr >= (int)esp - 32) 
-  { 
-    if(fault_addr < check_limit)   // if va is greater than the 8MB limit, exit 
-    {
-      printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
-      thread_exit (); 
-    }
-    struct page *p_stack = malloc (sizeof (struct page)); // make a new page
-    void *kpage = get_new_frame (p_stack);
-   
-    p_stack-> writable = write;
-    thread_current ()-> stack_bottom -= PGSIZE;
-    p_stack-> VA = thread_current ()-> stack_bottom;
-    if (!install_page (p_stack -> VA, kpage, p_stack-> writable))  // puts mapping in page directory
-    {
-      p_stack -> present = 0;
-      p_stack -> in_frame_table = 0;
-      palloc_free_page (kpage);
-    }
-    else
-    {
-      p_stack -> in_frame_table = 1;
-      p_stack -> present = 1;
-      insert_page (p_stack);
-      return;
-    }
-  } 
-
-
-  if(p == NULL)
-  {
-    printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status); //trying to present data never asked for
-    thread_exit ();
-  }
-
-  if(p -> present == 0)  // if memory has not yet been allocated for this page then allocate it
-  {
-   // printf("\nLAZY %p\n", fault_addr);
-    void *kpage = get_new_frame (p);  // get a physical memory spot for the faulting process
-
-    // Load this page. 
-    if (file_read_at (p -> file, kpage, p -> page_read_bytes, p -> ofs) 
-          != (int) p -> page_read_bytes)
-    {
-      p -> present = 0;
-      p -> in_frame_table = 0;
-      palloc_free_page (kpage);  // if didn't read what happens
-      thread_exit ();
-    }
-  
-    memset (kpage + (p -> page_read_bytes), 0, p -> page_zero_bytes);
-
-    // Add the page to the process's address space. 
-    if (!install_page (p -> VA, kpage, p -> writable))  // puts mapping in page directory
-    {
-      p -> present = 0;
-      p -> in_frame_table = 0;
-      palloc_free_page (kpage);
-    }
-    else
-    {
-      p -> present = 1;
-      p -> in_frame_table = 1;
-      return;
-    }   
-  }
-  else if(!p->in_frame_table) // if it is in swap
-  {
-    sema_down (&sema_swap);
-    void *kpage = get_new_frame (p);
-    if (!install_page (p -> VA, kpage, p -> writable))  // puts mapping in page directory
-    {
-      p -> present = 0;
-      p -> in_frame_table = 0;
-      palloc_free_page (kpage);
-    }
-    else  
-    {
-      remove_swap (p);
-      insert_frame (p->frame_ptr);
-      p -> in_frame_table = 1;
-      p -> present = 1;
-      pagedir_set_dirty (thread_current ()->pagedir, p, 1); 
-
-      sema_up (&sema_swap);
-      return;
-    }
-      sema_up (&sema_swap);
-  }
- 
-
-  printf ("%s: exit(%d)\n", thread_current ()->name, thread_current ()->exit_status);
-  thread_exit ();
-
+  write = (f->error_code & PF_W) != 0;
+  user = (f->error_code & PF_U) != 0;
 
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
@@ -277,3 +206,4 @@ page_fault (struct intr_frame *f)
 
   kill (f);
 }
+

@@ -1,6 +1,3 @@
-#include "vm/frame.h"
-#include "vm/swap.h"
-
 #include "threads/init.h"
 #include <console.h>
 #include <debug.h>
@@ -13,12 +10,12 @@
 #include <string.h>
 #include "devices/kbd.h"
 #include "devices/input.h"
-#include "devices/serial.h" 
-#include "devices/shutdown.h" 
+#include "devices/serial.h"
+#include "devices/shutdown.h"
 #include "devices/timer.h"
 #include "devices/vga.h"
 #include "devices/rtc.h"
-#include "threads/interrupt.h" 
+#include "threads/interrupt.h"
 #include "threads/io.h"
 #include "threads/loader.h"
 #include "threads/malloc.h"
@@ -39,7 +36,6 @@
 #include "devices/ide.h"
 #include "filesys/filesys.h"
 #include "filesys/fsutil.h"
-
 #endif
 
 /* Page directory with kernel mappings only. */
@@ -83,7 +79,7 @@ main (void)
   char **argv;
 
   /* Clear BSS. */  
-  bss_init (); 
+  bss_init ();
 
   /* Break command line into arguments and parse options. */
   argv = read_command_line ();
@@ -103,7 +99,6 @@ main (void)
   malloc_init ();
   paging_init ();
 
-  init_frame_table (); // frame init data structure
   /* Segmentation. */
 #ifdef USERPROG
   tss_init ();
@@ -132,7 +127,6 @@ main (void)
   filesys_init (format_filesys);
 #endif
 
-  init_swap_table ();
   printf ("Boot complete.\n");
   
   /* Run actions specified on kernel command line. */

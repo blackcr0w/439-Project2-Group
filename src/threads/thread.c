@@ -11,8 +11,6 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
-#include "vm/page.h"
-
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -104,6 +102,8 @@ thread_init (void)
 struct thread *
 get_thread_tid (tid_t tid)
 {
+  struct thread *current =  thread_current(); 
+
   struct list_elem *thread_elem;
 
   // loop through the children of currently running thread
@@ -131,12 +131,8 @@ thread_start (void)
     sema_init (&idle_started, 0);
     thread_create ("idle", PRI_MIN, idle, &idle_started);
 
-
-
     /* Start preemptive thread scheduling. */
     intr_enable ();
-
-
 
     /* Wait for the idle thread to initialize idle_thread. */
     sema_down (&idle_started);
@@ -187,7 +183,7 @@ thread_print_stats (void)
    PRIORITY, but no actual priority scheduling is implemented.
    Priority scheduling is the goal of Problem 1-3. */
 
-
+//Danny driving
 bool
 prioritycmp (const struct list_elem *a,
         const struct list_elem *b,
@@ -340,7 +336,6 @@ thread_tid (void)
 void
 thread_exit (void) 
 {
-
     ASSERT (!intr_context ());
 
 #ifdef USERPROG
@@ -549,8 +544,6 @@ init_thread (struct thread *t, const char *name, int priority)
     t -> fd_index = 2;
     t -> load = 1;
 
-    t -> root = 1;
-
     int *file_pointers[130] = {NULL};
 
     // intitialize children list of thread
@@ -559,8 +552,6 @@ init_thread (struct thread *t, const char *name, int priority)
     sema_init (&t->wait_block, 0);
     sema_init (&t->sema_parent_block, 0);
     sema_init (&t->exec_block, 0);
-
-    //hash_init (t->page_table, page_hash, hash_page_less, NULL);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

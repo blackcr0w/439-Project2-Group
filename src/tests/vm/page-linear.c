@@ -18,8 +18,8 @@ test_main (void)
 
   /* Initialize to 0x5a. */
   msg ("initialize");
-  // printf("(page-linear) read pass\n(page-linear) read/modify/write pass one\n(page-linear) read/modify/write pass two\n(page-linear) read pass\n(page-linear) end\n");
   memset (buf, 0x5a, sizeof buf);
+
   /* Check that it's all 0x5a. */
   msg ("read pass");
   for (i = 0; i < SIZE; i++)
@@ -41,5 +41,4 @@ test_main (void)
   for (i = 0; i < SIZE; i++)
     if (buf[i] != 0x5a)
       fail ("byte %zu != 0x5a", i);
-} 
- 
+}

@@ -5,7 +5,6 @@
 #include <list.h>
 #include <stdint.h>
 #include "synch.h"
-#include <hash.h>
 /* States in a thread's life cycle. */
 enum thread_status
 {
@@ -24,7 +23,7 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
-#define MB8 8388608                     /* 8MB limit for stack data. */
+
 /* A kernel thread or user process.
 
    Each thread structure is stored in its own 4 kB page.  The
@@ -83,8 +82,8 @@ typedef int tid_t;
    only because they are mutually exclusive: only a thread in the
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
- 
-struct thread 
+
+struct thread
 {
     /* Owned by thread.c. */
     tid_t tid;                          /* Thread identifier. */
@@ -123,15 +122,9 @@ struct thread
     int exit_status; // the exit status of this thread
     int load; // if the thread successfully loaded
 
-    struct condition *conWait;
-
-    int root; //determines if it is the first thread
 
 /*      End of Project 2 elements         */
-    
-    struct hash page_table;
-    char *stack_bottom; //pointer to the current bottom of the stack
-
+    struct condition *conWait;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

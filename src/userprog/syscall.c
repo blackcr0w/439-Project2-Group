@@ -35,10 +35,8 @@ syscall_handler (struct intr_frame *f)
   
   // get the system call
   int * esp = f->esp;
-
   bad_pointer (esp);
 
-  thread_current() -> stack = esp;
   // redirect to the correct function handler
   switch (*esp)
   { 
@@ -148,14 +146,13 @@ bad_pointer(int *esp)
     printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
     thread_exit ();
   }
-//  printf("badddddddd");
-    /*
+    
   // check if esp is unmapped
   if( pagedir_get_page (cur->pagedir, esp) == NULL )
   {
     printf ("%s: exit(%d)\n", cur->name, cur->exit_status);
     thread_exit ();
-  }*/
+  }
 }
 
 //Jeff driving here

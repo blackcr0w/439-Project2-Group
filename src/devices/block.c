@@ -5,6 +5,22 @@
 #include "devices/ide.h"
 #include "threads/malloc.h"
 
+/* A block device. */
+struct block
+  {
+    struct list_elem list_elem;         /* Element in all_blocks. */
+
+    char name[16];                      /* Block device name. */
+    enum block_type type;                /* Type of block device. */
+    block_sector_t size;                 /* Size in sectors. */
+
+    const struct block_operations *ops;  /* Driver operations. */
+    void *aux;                          /* Extra data owned by driver. */
+
+    unsigned long long read_cnt;        /* Number of sectors read. */
+    unsigned long long write_cnt;       /* Number of sectors written. */
+  };
+
 /* List of all block devices. */
 static struct list all_blocks = LIST_INITIALIZER (all_blocks);
 
@@ -194,7 +210,7 @@ block_register (const char *name, enum block_type type,
 
   return block;
 }
-
+
 /* Returns the block device corresponding to LIST_ELEM, or a null
    pointer if LIST_ELEM is the list end of all_blocks. */
 static struct block *
@@ -204,3 +220,4 @@ list_elem_to_block (struct list_elem *list_elem)
           ? list_entry (list_elem, struct block, list_elem)
           : NULL);
 }
+
