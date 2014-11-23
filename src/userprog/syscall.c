@@ -15,6 +15,8 @@
   
 static void syscall_handler (struct intr_frame *);
 
+char dir_path[100]; //arbitrary size
+
 int exec (const char *cmd_line);
 struct semaphore sema_files;  // only allow one file operation at a time
 
@@ -24,15 +26,13 @@ syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   sema_init (&sema_files, 1);
+  //dir_path = {NULL};
 }
 
 //Spencer and Jeff driving here
 static void
 syscall_handler (struct intr_frame *f) 
-{
-  // only allow one syscall at a time (up at the end)
-  struct thread *cur = thread_current ();
-  
+{  
   // get the system call
   int * esp = f->esp;
   bad_pointer (esp);
@@ -111,20 +111,20 @@ syscall_handler (struct intr_frame *f)
       close (*(esp+1));
       break;
 
-    case SYS_CHDIR
+    case SYS_CHDIR:
       
       break;
 
-    case SYS_MKDIR
+    case SYS_MKDIR:
       break;
 
-    case SYS_READDIR      
+    case SYS_READDIR:   
       break;
 
-    case SYS_ISDIR            
+    case SYS_ISDIR:            
       break; 
 
-    case SYS_INUMBER   
+    case SYS_INUMBER:   
       break;     
 
     default: 
@@ -136,71 +136,66 @@ syscall_handler (struct intr_frame *f)
 /* Change the current directory. */
 bool chdir (const char *dir)
 {
-  char *path_cpy = path;   // copying path
-  char *token, *save_ptr;       // for spliter
-  char s[strlen(path_cpy)];
+  char *dir_cpy = dir;   // copying path
+  //char s[strlen(dir_cpy)]
+  int size_expected = strlen(dir_path) + strlen(dir_cpy);
 
-  strlcpy(s, path_cpy, strlen (path_cpy)+1);  //moves path copy into s, add 1 for null
-
-  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
-        token = strtok_r (NULL, " ", &save_ptr))
-  {    
-    // do func with the tokenized thing.
-
+  if(dir[0] == '/')
+  {
+    int size_cpy = strlcpy(dir_path, dir_cpy, strlen (dir_cpy)+1);
+    return (size_cpy == strlen (dir_cpy));
+   // dir_path = dir; //absolute
   }
-  return false;
+  else
+  {
+    int size_cat = strlcat (dir_path, dir_cpy, size_expected);//relative 
+    return (size_cat == size_expected);
+  }
 }
 
 /* Create a directory. */
 bool mkdir (const char *dir)
 {
+  bool success = chdir (dir);
+  if(!success)
+    return false;
 
-  char *path_cpy = path;   // copying path
-  char *token, *save_ptr;       // for spliter
-  char s[strlen(path_cpy)];
+  char * name = get_last (dir);
 
-  strlcpy(s, path_cpy, strlen (path_cpy)+1);  //moves path copy into s, add 1 for null
+  int sector = 0;
 
-  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
-        token = strtok_r (NULL, " ", &save_ptr))
-  {    
-    // do func with the tokenized thing.
-      
-  }
-
-  return true;
+  dir_add (dir_path, name, sector); //????
 }
 
- /* Reads a directory entry. */
-bool readdir (int fd, char *name)
-{
-  char *path_cpy = path;   // copying path
-  char *token, *save_ptr;       // for spliter
-  char s[strlen(path_cpy)];
+//  /* Reads a directory entry. */
+// bool readdir (int fd, char *name)
+// {
+//   char *dir_cpy = dir;   // copying path
+//   char *token, *save_ptr;       // for spliter
+//   char s[strlen(dir_cpy)];
 
-  strlcpy(s, path_cpy, strlen (path_cpy)+1);  //moves path copy into s, add 1 for null
+//   strlcpy(s, dir_cpy, strlen (dir_cpy)+1);  //moves path copy into s, add 1 for null
 
-  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
-        token = strtok_r (NULL, " ", &save_ptr))
-  {    
-    // do func with the tokenized thing.
-      
-  }
+//   for (token = strtok_r (s, " ", &save_ptr); token != NULL;
+//         token = strtok_r (NULL, " ", &save_ptr))
+//   {    
+//     // do func with the tokenized thing.
 
-  return true;
-}
+//   }
+//   return false;
+// }
 
-/* Tests if a fd represents a directory. */
-bool isdir (int fd)
-{
-  return false;
-}
+// /* Tests if a fd represents a directory. */
+// bool isdir (int fd)
+// {
+//   return false;
+// }
 
-/* Returns the inode number for a fd. */
-int inumber (int fd)
-{
-  return;
-}
+// /* Returns the inode number for a fd. */
+// int inumber (int fd)
+// {
+//   return;
+// }
 
 
 
@@ -476,6 +471,21 @@ close (int fd)
   sema_up (&sema_files); // release file
 }
 
+char *
+get_last (char * path)
+{
+  char *token, *save_ptr;       // for spliter
+  char s[strlen(path)];
+
+  strlcpy(s, path, strlen (path)+1);  //moves path copy into s, add 1 for null
+
+  for (token = strtok_r (s, "/", &save_ptr); token != NULL;
+        token = strtok_r (NULL, "/", &save_ptr))
+  {}
+
+  return token;
+}
+/*
 void dir_pieces (char *path, function *func)
 {
   char *path_cpy = path;   // copying path
@@ -491,3 +501,4 @@ void dir_pieces (char *path, function *func)
     func (token);
   }
 }
+*/

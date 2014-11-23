@@ -22,6 +22,9 @@ int write (int fd, const void *buffer, unsigned size);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
+char * get_last (char * path);
+bool chdir (const char *dir);
+bool mkdir (const char *dir);
 
 char * get_cmd_line(char * cmd_line);
 

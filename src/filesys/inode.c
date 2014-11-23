@@ -128,6 +128,7 @@ inode_create (block_sector_t sector, off_t length)
 
   disk_inode = calloc (1, sizeof *disk_inode);
 
+
   if (disk_inode != NULL)
     {
       int i;
@@ -164,6 +165,7 @@ inode_create (block_sector_t sector, off_t length)
           for(j = 0; j < 128; j++)
           {
             
+  printf("\nhanging\n");
             indirect2 = indirect -> sec[j];
 
             for(k = 0; k < 128; k++)

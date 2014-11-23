@@ -19,6 +19,7 @@ struct dir_entry
     block_sector_t inode_sector;        /* Sector number of header. */
     char name[NAME_MAX + 1];            /* Null terminated file name. */
     bool in_use;                        /* In use or free? */
+    bool is_dir;
   };
 
 /* Creates a directory with space for ENTRY_CNT entries in the
@@ -30,13 +31,26 @@ dir_create (block_sector_t sector, size_t entry_cnt) //>=2
   bool success = inode_create (sector, entry_cnt * sizeof (struct dir_entry));
 
 
+  struct dir_entry *dot; 
+  dot -> name[0] = '.';
+  dot -> name[1] = NULL;
+  dot -> in_use = true;
+  dot -> inode_sector = sector;
+  dot -> is_dir = true;
 
-  struct dir_entry dot; // 
+  struct dir_entry *dotdot;
+  dotdot -> name[0] = '.';
+  dotdot -> name[1] = '.';
+  dotdot -> name[2] = NULL;
+  dotdot -> in_use = true;
+  dotdot -> inode_sector = sector;
+  dotdot -> is_dir = true;
+
 
   inode_write_at(sector, dot, sizeof (struct dir_entry), 0); // .
 
-   inode_write_at(sector, dot, sizeof (struct dir_entry), sizeof (struct dir_entry)); // .
-  return sucess;
+  inode_write_at(sector, dotdot, sizeof (struct dir_entry), sizeof (struct dir_entry)); // ..
+  
 }
 
 /* Opens and returns the directory for the given INODE, of which
@@ -158,7 +172,17 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   ASSERT (dir != NULL);
   ASSERT (name != NULL);
 
- // list_init(&e -> children); 
+/*
+  struct dir_entry *dot; 
+  dot -> name = ".";
+  dot -> in_use = true;
+  dot -> inode_sector = sector;
+
+  struct dir_entry *dotdot;
+  dotdot -> name = "..";
+  dotdot -> in_use = true;
+  dotdot -> inode_sector = sector;*/
+ 
 
   /* Check NAME for validity. */
   if (*name == '\0' || strlen (name) > NAME_MAX)
