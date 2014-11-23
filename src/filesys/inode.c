@@ -10,6 +10,8 @@
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
 
+enum sector_loc location;
+
 /* On-disk inode.
    Must be exactly BLOCK_SECTOR_SIZE bytes long. */
 struct inode_disk
@@ -60,6 +62,7 @@ byte_to_sector (const struct inode *inode, off_t pos) // math goes here for figu
 
   if (0 <= spot && spot <= 122)  // if the sector index is in the directly linked sections
   {
+    location = DIRECT;  // update for use in write
     return inode -> data.sectors[spot];  // get the sector of the disk at that index
   }
 
@@ -70,6 +73,7 @@ byte_to_sector (const struct inode *inode, off_t pos) // math goes here for figu
     struct indirect temp_indir;
     block_read (fs_device, inode -> data.sectors[123], &temp_indir);  // read the block into struct indirect
 
+    location = INDIRECT;  // update for use in write
     return temp_indir.sec[indir];  // return index in that indirect sector
   }
 
@@ -84,8 +88,10 @@ byte_to_sector (const struct inode *inode, off_t pos) // math goes here for figu
     struct indirect temp_indir2;
     block_read (fs_device, inode -> data.sectors[first_spot], &temp_indir2);  // read index into second indirect into indirect struct temp_indir2
 
+    location = DOUBLY_INDIRECT;  // update for use in write
     return temp_indir2.sec[second_spot];  // return sector index in the second indirect
   }
+  return -1;
 }
 
 /* List of open inodes, so that opening a single inode twice
@@ -282,6 +288,9 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
       /* Disk sector to read, starting byte offset within sector. */
       block_sector_t sector_idx = byte_to_sector (inode, offset);
 
+      if(offset > size)
+        return 0;
+
       ASSERT(sector_idx);
       int sector_ofs = offset % BLOCK_SECTOR_SIZE;
 
@@ -348,11 +357,6 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
     {
       /* Sector to write, starting byte offset within sector. */
       block_sector_t sector_idx = byte_to_sector (inode, offset);
-      if (!sector_idx)
-      {
-        free_map_allocate (1, disk_inode -> sectors[sector_idx]);
-      }
-
       int sector_ofs = offset % BLOCK_SECTOR_SIZE;
 
       /* Bytes left in inode, bytes left in sector, lesser of the two. */
@@ -363,7 +367,23 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
       /* Number of bytes to actually write into this sector. */
       int chunk_size = size < min_left ? size : min_left;
       if (chunk_size <= 0)
-        break;
+      {
+        // figure out if part of direct, indirect or doubly indirect.
+
+
+        off_t remaining_size = size - bytes_written;
+        int sectors_to_alloc = divide_up (remaining_size);
+
+        // how to get one file to go across inode level
+/*        if(offset > 122)
+        {
+          
+        }*/
+
+        // maybe put our code in here
+        free_map_allocate (sectors_to_alloc, disk_inode -> sectors[sector_idx]);
+        //break;
+      }
 
       if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE)
         {
@@ -426,4 +446,9 @@ off_t
 inode_length (const struct inode *inode)
 {
   return inode->data.length;
+}
+
+int divide_up (int size)
+{
+  return (size + (BLOCK_SECTOR_SIZE-1)) / BLOCK_SECTOR_SIZE;
 }

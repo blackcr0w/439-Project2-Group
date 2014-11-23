@@ -7,6 +7,14 @@
 
 struct bitmap;
 
+// check which sector
+enum sector_loc
+{
+  DIRECT,           // in the direct sectors
+  INDIRECT,         // in 1st indirect sector
+  DOUBLY_INDIRECT   // in 2nd indirect sector
+};
+
 void inode_init (void);
 bool inode_create (block_sector_t, off_t);
 struct inode *inode_open (block_sector_t);

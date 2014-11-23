@@ -111,11 +111,103 @@ syscall_handler (struct intr_frame *f)
       close (*(esp+1));
       break;
 
+    case SYS_CHDIR
+      
+      break;
+
+    case SYS_MKDIR
+      break;
+
+    case SYS_READDIR      
+      break;
+
+    case SYS_ISDIR            
+      break; 
+
+    case SYS_INUMBER   
+      break;     
+
     default: 
       thread_exit ();
       break;
   }   
 }
+
+/* Change the current directory. */
+bool chdir (const char *dir)
+{
+  char *path_cpy = path;   // copying path
+  char *token, *save_ptr;       // for spliter
+  char s[strlen(path_cpy)];
+
+  strlcpy(s, path_cpy, strlen (path_cpy)+1);  //moves path copy into s, add 1 for null
+
+  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
+        token = strtok_r (NULL, " ", &save_ptr))
+  {    
+    // do func with the tokenized thing.
+
+  }
+  return false;
+}
+
+/* Create a directory. */
+bool mkdir (const char *dir)
+{
+
+  char *path_cpy = path;   // copying path
+  char *token, *save_ptr;       // for spliter
+  char s[strlen(path_cpy)];
+
+  strlcpy(s, path_cpy, strlen (path_cpy)+1);  //moves path copy into s, add 1 for null
+
+  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
+        token = strtok_r (NULL, " ", &save_ptr))
+  {    
+    // do func with the tokenized thing.
+      
+  }
+
+  return true;
+}
+
+ /* Reads a directory entry. */
+bool readdir (int fd, char *name)
+{
+  char *path_cpy = path;   // copying path
+  char *token, *save_ptr;       // for spliter
+  char s[strlen(path_cpy)];
+
+  strlcpy(s, path_cpy, strlen (path_cpy)+1);  //moves path copy into s, add 1 for null
+
+  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
+        token = strtok_r (NULL, " ", &save_ptr))
+  {    
+    // do func with the tokenized thing.
+      
+  }
+
+  return true;
+}
+
+/* Tests if a fd represents a directory. */
+bool isdir (int fd)
+{
+  return false;
+}
+
+/* Returns the inode number for a fd. */
+int inumber (int fd)
+{
+  return;
+}
+
+
+
+
+
+
+
 
 /*Closes all the files in a process, called before it exists */
 void
@@ -382,4 +474,20 @@ close (int fd)
     }
   // else fail silently
   sema_up (&sema_files); // release file
+}
+
+void dir_pieces (char *path, function *func)
+{
+  char *path_cpy = path;   // copying path
+  char *token, *save_ptr;       // for spliter
+  char s[strlen(path_cpy)];
+
+  strlcpy(s, path_cpy, strlen (path_cpy)+1);  //moves path copy into s, add 1 for null
+
+  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
+        token = strtok_r (NULL, " ", &save_ptr))
+  {    
+    // do func with the tokenized thing.
+    func (token);
+  }
 }
