@@ -162,40 +162,35 @@ bool mkdir (const char *dir)
 
   char * name = get_last (dir);
 
-  int sector = 0;
+  int sector = 0; ???
 
   dir_add (dir_path, name, sector); //????
 }
 
-//  /* Reads a directory entry. */
-// bool readdir (int fd, char *name)
-// {
-//   char *dir_cpy = dir;   // copying path
-//   char *token, *save_ptr;       // for spliter
-//   char s[strlen(dir_cpy)];
+ /* Reads a directory entry. */
+bool readdir (int fd, char *name)
+{
+  //eh?
+  struct file * f_dir = thread_current ()->file_pointers[fd];
 
-//   strlcpy(s, dir_cpy, strlen (dir_cpy)+1);  //moves path copy into s, add 1 for null
+  return dir_readdir (f_dir, name);
+}
 
-//   for (token = strtok_r (s, " ", &save_ptr); token != NULL;
-//         token = strtok_r (NULL, " ", &save_ptr))
-//   {    
-//     // do func with the tokenized thing.
+/* Tests if a fd represents a directory. */
+bool isdir (int fd)
+{
+  struct file * f_dir = thread_current ()->file_pointers[fd];
 
-//   }
-//   return false;
-// }
+  return f_dir->is_dir;
+}
 
-// /* Tests if a fd represents a directory. */
-// bool isdir (int fd)
-// {
-//   return false;
-// }
+/* Returns the inode number for a fd. */
+int inumber (int fd)
+{
+  struct file * f_dir = thread_current ()->file_pointers[fd];
 
-// /* Returns the inode number for a fd. */
-// int inumber (int fd)
-// {
-//   return;
-// }
+  return dir_get_inode (f_dir)-> sector;
+}
 
 
 

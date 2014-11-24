@@ -30,7 +30,17 @@ dir_create (block_sector_t sector, size_t entry_cnt) //>=2
   // add parent sector
   bool success = inode_create (sector, entry_cnt * sizeof (struct dir_entry));
 
+  struct dir * first_dir = dir_open (inode_open (sector));
 
+  char * dot = '.';
+  char * dotdot = "..";
+
+  dir_add (dir, dot, sector);
+
+  dir_add (dir, dotdot, sector);
+
+
+  /*
   struct dir_entry *dot; 
   dot -> name[0] = '.';
   dot -> name[1] = NULL;
@@ -45,11 +55,11 @@ dir_create (block_sector_t sector, size_t entry_cnt) //>=2
   dotdot -> in_use = true;
   dotdot -> inode_sector = sector;
   dotdot -> is_dir = true;
+*/
 
+  //inode_write_at(sector, dot, sizeof (struct dir_entry), 0); // .
 
-  inode_write_at(sector, dot, sizeof (struct dir_entry), 0); // .
-
-  inode_write_at(sector, dotdot, sizeof (struct dir_entry), sizeof (struct dir_entry)); // ..
+ // inode_write_at(sector, dotdot, sizeof (struct dir_entry), sizeof (struct dir_entry)); // ..
   
 }
 
@@ -171,18 +181,6 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
 
   ASSERT (dir != NULL);
   ASSERT (name != NULL);
-
-/*
-  struct dir_entry *dot; 
-  dot -> name = ".";
-  dot -> in_use = true;
-  dot -> inode_sector = sector;
-
-  struct dir_entry *dotdot;
-  dotdot -> name = "..";
-  dotdot -> in_use = true;
-  dotdot -> inode_sector = sector;*/
- 
 
   /* Check NAME for validity. */
   if (*name == '\0' || strlen (name) > NAME_MAX)

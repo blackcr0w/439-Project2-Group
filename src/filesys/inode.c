@@ -164,8 +164,6 @@ inode_create (block_sector_t sector, off_t length)
           indirect = disk_inode -> sectors[124];
           for(j = 0; j < 128; j++)
           {
-            
-  printf("\nhanging\n");
             indirect2 = indirect -> sec[j];
 
             for(k = 0; k < 128; k++)
