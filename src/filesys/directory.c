@@ -11,6 +11,7 @@ struct dir
   {
     struct inode *inode;                /* Backing store. */
     off_t pos;                          /* Current position. */
+    int is_dir;            /* Has file_deny_write() been called? */
   };
 
 /* A single directory entry. */
@@ -19,7 +20,6 @@ struct dir_entry
     block_sector_t inode_sector;        /* Sector number of header. */
     char name[NAME_MAX + 1];            /* Null terminated file name. */
     bool in_use;                        /* In use or free? */
-    bool is_dir;
   };
 
 /* Creates a directory with space for ENTRY_CNT entries in the
@@ -30,7 +30,9 @@ dir_create (block_sector_t sector, size_t entry_cnt) //>=2
   // add parent sector
   bool success = inode_create (sector, entry_cnt * sizeof (struct dir_entry));
 
+
   struct dir * first_dir = dir_open (inode_open (sector));
+  first_dir -> is_dir = -1;
 
   char * dot = '.';
   char * dotdot = "..";
@@ -38,6 +40,8 @@ dir_create (block_sector_t sector, size_t entry_cnt) //>=2
   dir_add (dir, dot, sector);
 
   dir_add (dir, dotdot, sector);
+
+
 
 
   /*

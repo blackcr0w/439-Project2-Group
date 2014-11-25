@@ -134,7 +134,8 @@ syscall_handler (struct intr_frame *f)
 }
 
 /* Change the current directory. */
-bool chdir (const char *dir)
+bool 
+chdir (const char *dir)
 {
   char *dir_cpy = dir;   // copying path
   //char s[strlen(dir_cpy)]
@@ -154,34 +155,47 @@ bool chdir (const char *dir)
 }
 
 /* Create a directory. */
-bool mkdir (const char *dir)
-{
+bool 
+mkdir (const char *dir)
+{  
   bool success = chdir (dir);
   if(!success)
     return false;
 
   char * name = get_last (dir);
 
-  int sector = 0; ???
+  block_sector_t sector = 0;
 
-  dir_add (dir_path, name, sector); //????
+  free_map_allocate (1, &sector);
+
+  //make new inode
+
+
+
+  dir_create (sector, size, sector_parent); //????
 }
 
  /* Reads a directory entry. */
-bool readdir (int fd, char *name)
+bool 
+readdir (int fd, char *name)
 {
   //eh?
   struct file * f_dir = thread_current ()->file_pointers[fd];
+  
+  struct dir new_dir;
+  new_dir.inode = file -> inode;
+  new_dir.pos = file -> pos;
 
-  return dir_readdir (f_dir, name);
+  return dir_readdir (new_dir, name);
 }
 
 /* Tests if a fd represents a directory. */
-bool isdir (int fd)
+bool 
+isdir (int fd)
 {
   struct file * f_dir = thread_current ()->file_pointers[fd];
 
-  return f_dir->is_dir;
+  return (f_dir -> is_dir == -1);
 }
 
 /* Returns the inode number for a fd. */
@@ -191,12 +205,6 @@ int inumber (int fd)
 
   return dir_get_inode (f_dir)-> sector;
 }
-
-
-
-
-
-
 
 
 /*Closes all the files in a process, called before it exists */
