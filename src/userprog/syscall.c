@@ -1,6 +1,30 @@
 #include "userprog/syscall.h"
+#include <syscall-nr.h>
+#include <stdio.h>
+#include <string.h>
+#include "userprog/process.h"
+#include "userprog/pagedir.h"
+#include "threads/interrupt.h"
+#include "threads/thread.h"
+#include "threads/vaddr.h"
+#include "threads/synch.h"
+#include "devices/shutdown.h"
+#include "devices/input.h"
+
+//#include "filesys/file.c"
+#include "filesys/directory.c"
   
 static void syscall_handler (struct intr_frame *);
+
+
+bool valid_mkdir (char *dir, struct dir *dir_to_add);
+char * get_cmd_line(char * cmd_line);
+bool chdir (const char *dir);
+bool mkdir (const char *dir);
+bool readdir (int fd, char *name);
+bool isdir (int fd);
+int inumber (int fd);
+char *get_last (char * path);
 
 char dir_path [500]; // limit size of directory path to 500 characters
 
