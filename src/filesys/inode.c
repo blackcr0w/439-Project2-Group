@@ -45,8 +45,9 @@ struct inode
     block_sector_t sector;              /* Sector number of disk location. */
     int open_cnt;                       /* Number of openers. */
     bool removed;                       /* True if deleted, false otherwise. */
-    int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
+    int deny_write_cnt;                 /* 0: writes ok, >:O deny writes. */
     struct inode_disk data;             /* Inode content. */
+    int is_dir;                         // is it a directory (-1 is true)
   };
 
 /* Returns the block device sector that contains byte offset POS
@@ -115,7 +116,7 @@ inode_create (block_sector_t sector, off_t length)
 {
   struct inode_disk *disk_inode = NULL;
   struct indirect *indirect = NULL;
-   struct indirect *indirect2 = NULL;
+  struct indirect *indirect2 = NULL;
 
   bool success = false;
 
@@ -128,7 +129,6 @@ inode_create (block_sector_t sector, off_t length)
 
   disk_inode = calloc (1, sizeof *disk_inode);
 
-
   if (disk_inode != NULL)
     {
       int i;
@@ -138,7 +138,7 @@ inode_create (block_sector_t sector, off_t length)
       int sec_save = sectors;
       disk_inode->length = length;
       disk_inode->magic = INODE_MAGIC;
-      
+
       block_write (fs_device, sector, disk_inode);
       static char zeros[BLOCK_SECTOR_SIZE];
 

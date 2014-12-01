@@ -1,17 +1,4 @@
-#include <syscall-nr.h>
-#include <stdio.h>
-#include <string.h>
-#include "userprog/process.h"
 #include "userprog/syscall.h"
-#include "userprog/pagedir.h"
-#include "filesys/file.h"
-#include "filesys/filesys.h"
-#include "threads/interrupt.h"
-#include "threads/thread.h"
-#include "threads/vaddr.h"
-#include "devices/shutdown.h"
-#include "devices/input.h"
-#include "threads/synch.h"
   
 static void syscall_handler (struct intr_frame *);
 
@@ -525,11 +512,12 @@ bool
 isdir (int fd)
 {
   struct file * f_dir = thread_current ()->file_pointers[fd];
-  return !(f_dir -> inode -> is_dir);
+  return f_dir -> inode -> is_dir == -1;
 }
 
 /* Returns the inode number for a fd. */
-int inumber (int fd)
+int 
+inumber (int fd)
 {
   struct file * f_dir = thread_current ()->file_pointers[fd];
   return dir_get_inode (f_dir)-> sector;
