@@ -11,8 +11,9 @@
 #include "devices/shutdown.h"
 #include "devices/input.h"
 
-//#include "filesys/file.c"
-#include "filesys/directory.c"
+#include "filesys/file.h"
+#include "filesys/directory.h"
+#include "filesys/inode.h"
   
 static void syscall_handler (struct intr_frame *);
 

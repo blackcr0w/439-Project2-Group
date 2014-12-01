@@ -6,7 +6,6 @@ userprog/syscall.o: ../../userprog/syscall.c ../../userprog/syscall.h \
   ../../threads/synch.h ../../userprog/pagedir.h \
   ../../threads/interrupt.h ../../threads/vaddr.h ../../threads/loader.h \
   ../../threads/synch.h ../../devices/shutdown.h ../../devices/input.h \
-  ../../filesys/directory.c ../../filesys/directory.h \
-  ../../devices/block.h ../../lib/inttypes.h ../../filesys/inode.c \
-  ../../filesys/inode.h ../../filesys/off_t.h ../../lib/round.h \
-  ../../filesys/filesys.h ../../filesys/free-map.h ../../threads/malloc.h
+  ../../filesys/file.h ../../filesys/off_t.h ../../filesys/directory.h \
+  ../../devices/block.h ../../lib/inttypes.h ../../filesys/inode.h \
+  ../../filesys/filesys.h

@@ -4,7 +4,6 @@
 #include <stdbool.h>
 
 
-
 // define pid_t
 typedef int pid_t;
  
