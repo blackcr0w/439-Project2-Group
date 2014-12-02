@@ -94,8 +94,6 @@ inode_create (block_sector_t sector, off_t length)
   struct indirect *indirect = NULL;
   struct indirect *indirect2 = NULL;
 
-  bool success = false;
-
   ASSERT (length >= 0);
 
   /* If this assertion fails, the inode structure is not exactly
@@ -120,22 +118,26 @@ inode_create (block_sector_t sector, off_t length)
 
       for (i = 0;sec_save != 0; sec_save--, i++)  // for every sector needed
       {
-        if ((free_map_allocate (1, disk_inode -> sectors[i])) && i < 123)
+        block_sector_t * sec_pointer = &(disk_inode -> sectors[i]);
+
+        if (free_map_allocate (1, sec_pointer) && i < 123)
         {
-           block_write (fs_device, disk_inode -> sectors[i], zeros); // zeroing out?
+         // printf("\n\n\nThe sectors is: %d\n\n\n", disk_inode->sectors[i]);
+           block_write (fs_device, disk_inode->sectors[i], zeros); // zeroing out?
         }
-        else if ((free_map_allocate (1, disk_inode -> sectors[i])) && i == 123)  // make this a indirect sector
+        else if ((free_map_allocate (1, sec_pointer) && i == 123))  // make this a indirect sector
         {
+
           indirect = disk_inode -> sectors[123];
           for(j = 0; j < 128; j++)
           {
-            if(free_map_allocate (1, indirect->sec[j]))
+            if(free_map_allocate (1, &(indirect->sec[j])))
             {
               block_write (fs_device, indirect -> sec[j], zeros); // zeroing out?
             }
           }           
         }
-        else if ((free_map_allocate (1, disk_inode -> sectors[i])) && i == 124) // make this a double indirect
+        else if (free_map_allocate (1, sec_pointer) && i == 124) // make this a double indirect
         {
           indirect = disk_inode -> sectors[124];
           for(j = 0; j < 128; j++)
@@ -144,7 +146,7 @@ inode_create (block_sector_t sector, off_t length)
 
             for(k = 0; k < 128; k++)
             {
-              if(free_map_allocate (1, indirect2 -> sec[k]))
+              if(free_map_allocate (1, &(indirect2 -> sec[k])))
               {
                 block_write (fs_device, indirect2 -> sec[k], zeros); // zeroing out?
               }
@@ -157,7 +159,8 @@ inode_create (block_sector_t sector, off_t length)
          block_write (fs_device, sector, disk_inode);
       }
     }
-  return success;
+//printf("\n\n\n AHAHAHAHAHAHA \n\n\n");
+  return true;
 }
 
 /* Reads an inode from SECTOR
@@ -253,7 +256,7 @@ inode_remove (struct inode *inode)
    Returns the number of bytes actually read, which may be less
    than SIZE if an error occurs or end of file is reached. */
 off_t
-inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) 
+inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) //not finding name in the dir
 {
   uint8_t *buffer = buffer_;
   off_t bytes_read = 0;
@@ -263,6 +266,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
     {
       /* Disk sector to read, starting byte offset within sector. */
       block_sector_t sector_idx = byte_to_sector (inode, offset);
+      //printf("\n\n\nhihihihihihihihihihihihi\n\n\n");
 
       if(offset > size)
         return 0;

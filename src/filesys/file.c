@@ -3,14 +3,13 @@
 #include "filesys/inode.h"
 #include "threads/malloc.h"
 
-
-
 /* Opens a file for the given INODE, of which it takes ownership,
    and returns the new file.  Returns a null pointer if an
    allocation fails or if INODE is null. */
 struct file *
 file_open (struct inode *inode) 
 {
+  printf("\n\n\ninode from file_open: %p\n\n\n", inode); // this was null find where it was called
   struct file *file = calloc (1, sizeof *file);
   if (inode != NULL && file != NULL)
     {

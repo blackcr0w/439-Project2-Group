@@ -124,18 +124,27 @@ syscall_handler (struct intr_frame *f)
       break;
 
     case SYS_CHDIR:
+   //   bad_pointer (esp+1);
+      chdir (*(esp+1));
       break;
 
     case SYS_MKDIR:
+    //  bad_pointer (esp+1);
+      mkdir (*(esp+1));
       break;
 
     case SYS_READDIR:   
+      readdir ((esp+1), *(esp+2));
       break;
 
-    case SYS_ISDIR:            
+    case SYS_ISDIR:        
+      //bad_pointer (esp+1);
+      isdir ((esp+1));
       break; 
 
     case SYS_INUMBER:   
+    //  bad_pointer (esp+1);
+      inumber ((esp+1));
       break;     
 
     default: 
@@ -204,10 +213,10 @@ exit (int status)
   file_close (cur->save); // closing file so that write can be allowed
 
   close_files (); // close all open files in a process
-
+ 
   thread_exit (); 
 }
-
+ 
 // execute the given command line
 //Dakota driving here
 int 
@@ -411,35 +420,6 @@ close (int fd)
   sema_up (&sema_files); // release file
 }
 
-/*
-bool 
-chdir (const char *dir)
-{
-  char * dir_check;
-
-
-  //get first directory 
-
-  //
-
-  char *dir_cpy = dir;   // copying path
-  //char s[strlen(dir_cpy)]
-  int size_expected = strlen(dir_path) + strlen(dir_cpy);
-
-  if(dir[0] == '/')
-  {
-    int size_cpy = strlcpy(dir_path, dir_cpy, strlen (dir_cpy)+1);
-    return (size_cpy == strlen (dir_cpy));
-   // dir_path = dir; //absolute
-  }
-  else
-  {
-    int size_cat = strlcat (dir_path, dir_cpy, size_expected);//relative 
-    return (size_cat == size_expected);
-  }
-}
-
-*/
 /* Change the current directory. */
 bool 
 chdir (const char *dir)

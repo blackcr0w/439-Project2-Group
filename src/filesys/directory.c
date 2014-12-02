@@ -15,11 +15,13 @@ dir_create (block_sector_t sector, size_t entry_cnt)
   struct dir *first_dir = dir_open (inode_open (sector));
   first_dir->inode->is_dir = -1;
 
-  char *dot = '.';
+  char *dot = ".";
   char *dotdot = "..";
 
   dir_add (first_dir, dot, sector);
   dir_add (first_dir, dotdot, sector);
+
+  return success;
 }
 
 /* Opens and returns the directory for the given INODE, of which
@@ -93,6 +95,8 @@ lookup (const struct dir *dir, const char *name,
 
   for (ofs = 0; inode_read_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
        ofs += sizeof e) 
+  {
+    printf("Pintos lookp offset: %d\n\n\n", ofs);
     if (e.in_use && !strcmp (name, e.name)) 
       {
         if (ep != NULL)
@@ -100,7 +104,8 @@ lookup (const struct dir *dir, const char *name,
         if (ofsp != NULL)
           *ofsp = ofs;
         return true;
-      }
+      } 
+    }
   return false;
 }
 
@@ -118,9 +123,16 @@ dir_lookup (const struct dir *dir, const char *name,
   ASSERT (name != NULL);
 
   if (lookup (dir, name, &e, NULL))
+  {
+
+   // printf("\n\n\n\ndir_lookup INODE!!!! %p\n\n\n", inode);
     *inode = inode_open (e.inode_sector);
+  }
   else
+  {
+    
     *inode = NULL;
+  }
 
   return *inode != NULL;
 }
@@ -143,8 +155,10 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
 
   /* Check NAME for validity. */
   if (*name == '\0' || strlen (name) > NAME_MAX)
+  {
     return false;
-
+  }
+  
   /* Check that NAME is not in use. */
   if (lookup (dir, name, NULL, NULL))
     goto done;

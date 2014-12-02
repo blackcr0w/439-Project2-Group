@@ -120,6 +120,7 @@ fsutil_extract (char **argv UNUSED)
           if (!filesys_create (file_name, size))
             PANIC ("%s: create failed", file_name);
           dst = filesys_open (file_name);
+          printf("\n\nopen: %p\n\n\n\n\n\n\n", filesys_open (file_name)); //filesys retuns null TA HELP ME
           if (dst == NULL)
             PANIC ("%s: open failed", file_name);
 

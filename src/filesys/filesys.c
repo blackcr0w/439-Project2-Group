@@ -17,6 +17,8 @@ static void do_format (void);
 void
 filesys_init (bool format) 
 {
+
+
   fs_device = block_get_role (BLOCK_FILESYS);
   if (fs_device == NULL)
     PANIC ("No file system device found, can't initialize file system.");
@@ -66,12 +68,18 @@ filesys_create (const char *name, off_t initial_size)
 struct file *
 filesys_open (const char *name)
 {
+  printf("\n\n\nname: %s\n\n\n", name);
   struct dir *dir = dir_open_root ();
-  struct inode *inode = NULL;
+  struct inode **inode = NULL;
 
   if (dir != NULL)
-    dir_lookup (dir, name, &inode);
+  {
+    dir_lookup (dir, name, inode);  //single pointer?
+     printf("\n\n\n\nNULLL!!!!%p\n\n\n", inode);
+  }
   dir_close (dir);
+
+  printf("\n\n\nfile_open: %p\n\n\n", *inode);  // returned null
 
   return file_open (inode);
 }
