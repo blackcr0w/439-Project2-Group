@@ -9,7 +9,6 @@
 struct file *
 file_open (struct inode *inode) 
 {
-  printf("\n\n\ninode from file_open: %p\n\n\n", inode); // this was null find where it was called
   struct file *file = calloc (1, sizeof *file);
   if (inode != NULL && file != NULL)
     {

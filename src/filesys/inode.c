@@ -122,7 +122,6 @@ inode_create (block_sector_t sector, off_t length)
 
         if (free_map_allocate (1, sec_pointer) && i < 123)
         {
-         // printf("\n\n\nThe sectors is: %d\n\n\n", disk_inode->sectors[i]);
            block_write (fs_device, disk_inode->sectors[i], zeros); // zeroing out?
         }
         else if ((free_map_allocate (1, sec_pointer) && i == 123))  // make this a indirect sector
@@ -159,7 +158,6 @@ inode_create (block_sector_t sector, off_t length)
          block_write (fs_device, sector, disk_inode);
       }
     }
-//printf("\n\n\n AHAHAHAHAHAHA \n\n\n");
   return true;
 }
 
@@ -266,10 +264,11 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) //n
     {
       /* Disk sector to read, starting byte offset within sector. */
       block_sector_t sector_idx = byte_to_sector (inode, offset);
-      //printf("\n\n\nhihihihihihihihihihihihi\n\n\n");
 
-      if(offset > size)
-        return 0;
+   /*   if(offset > size)
+        return 0;*/
+
+
 
       ASSERT(sector_idx);
       int sector_ofs = offset % BLOCK_SECTOR_SIZE;
@@ -353,12 +352,6 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
 
         off_t remaining_size = size - bytes_written;
         int sectors_to_alloc = divide_up (remaining_size);
-
-        // how to get one file to go across inode level
-/*        if(offset > 122)
-        {
-          
-        }*/
 
         // maybe put our code in here
         free_map_allocate (sectors_to_alloc, disk_inode -> sectors[sector_idx]);
