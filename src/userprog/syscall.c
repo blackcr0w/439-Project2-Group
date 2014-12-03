@@ -1,4 +1,3 @@
-#include "userprog/syscall.h"
 #include <syscall-nr.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +9,7 @@
 #include "threads/synch.h"
 #include "devices/shutdown.h"
 #include "devices/input.h"
-
+#include "userprog/syscall.h"
 #include "filesys/file.h"
 #include "filesys/directory.h"
 #include "filesys/inode.h"
@@ -25,9 +24,7 @@ bool mkdir (const char *dir);
 bool readdir (int fd, char *name);
 bool isdir (int fd);
 int inumber (int fd);
-char *get_last (char * path);
-
-char dir_path [500]; // limit size of directory path to 500 characters
+void get_last (char * path, char * stop);
 
 int exec (const char *cmd_line);
 struct semaphore sema_files;  // only allow one file operation at a time
@@ -38,7 +35,7 @@ syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   sema_init (&sema_files, 1);
-  //dir_path = {NULL};
+  dir_path[0] = '/';
 }
 
 //Spencer and Jeff driving here
@@ -125,33 +122,33 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_CHDIR:
    //   bad_pointer (esp+1);
-      chdir (*(esp+1));
+      f->eax = chdir (*(esp+1));
       break;
 
     case SYS_MKDIR:
     //  bad_pointer (esp+1);
-      mkdir (*(esp+1));
+      f->eax = mkdir (*(esp+1));
       break;
 
     case SYS_READDIR:   
-      readdir ((esp+1), *(esp+2));
+      f->eax = readdir ((esp+1), *(esp+2));
       break;
 
     case SYS_ISDIR:        
       //bad_pointer (esp+1);
-      isdir ((esp+1));
+      f->eax = isdir ((esp+1));
       break; 
 
     case SYS_INUMBER:   
     //  bad_pointer (esp+1);
-      inumber ((esp+1));
+      f->eax = inumber ((esp+1));
       break;     
 
     default: 
       thread_exit ();
       break;
   }   
-}
+} 
 
 /*Closes all the files in a process, called before it exists */
 void
@@ -244,6 +241,7 @@ wait (pid_t pid)
 bool 
 create (const char *file, unsigned initial_size)
 {
+  printf("file: %s\n\n", file);
   sema_down (&sema_files); // prevent multi-file manipulation
   bool res = filesys_create (file, initial_size);  // save result
   sema_up (&sema_files);   // release file
@@ -461,42 +459,37 @@ chdir (const char *dir)
   strlcpy (dir_path, dir_check, size_expected);
   // dir_path = dir_check;
   return true; // if every subdirectory is good, we are good to go!
-
-
- /* for(; get_first (dir_check) != get_last (dir_cpy)); dir_check = cut_first (dir_cut))
-  {
-
-    bool check = dir_lookup (directory, get_first (dir_check), cur_inode);
-    if(!check)
-      return false;
-
-    directory = dir_open (cur_inode);
-  }
-
-
-  int size_cpy = strlcpy(dir_path, dir_cpy, strlen (dir_cpy)+1);*/
-
 }
 
 /* Create a directory. */
 bool 
 mkdir (const char *dir)
 {
+  char * name;
+
   struct dir *directory_to_add;
 
   // make sure the given path is valid
   if(!valid_mkdir (dir, directory_to_add))
     return false;
 
-  char * name = get_last (dir);
+/*  if(dir_open_root ()->pos == directory_to_add->pos)
+      printf("\n\nYES!\n\n");
+  else
+    printf("root not equal\n\n\n");*/
+ // get_last(dir, name); //path
+ // name = "a";
 
   block_sector_t sector = 0;
   free_map_allocate (1, &sector);
+ //    printf("\nLookup worked %s\n\n", directory_to_add);
 
   //make new inode
 
   dir_create (sector, 128);
-  dir_add (directory_to_add, name, sector);
+  dir_add (dir_open_root (), dir, sector); // dir_open_root () should be directory_to_add HELP dir needs to be last
+ 
+  return true;
 }
 
  /* Reads a directory entry. */
@@ -529,40 +522,50 @@ inumber (int fd)
 }
 
 // gets the last token in the path split by '/'
-char *
-get_last (char * path)
+void
+get_last (char * path, char * stop)
 {
   char *token, *save_ptr;       // for spliter
   char s[strlen(path)];
+  char *save_tok;
+  
 
   strlcpy(s, path, strlen (path)+1);  //moves path copy into s, add 1 for null
 
   for (token = strtok_r (s, "/", &save_ptr); token != NULL;
         token = strtok_r (NULL, "/", &save_ptr))
-  {}
+  {
+    if(token != NULL)
+    {    
+      save_tok = token;
+    }
+  }
+  char save[strlen(save_tok)];
+  strlcpy (save, save_tok, strlen (save_tok)+1); 
 
-  return token;
+  stop = (char*) save;
 }
 
 bool
 valid_mkdir (char *dir, struct dir *dir_to_add)
 {
-  char stop = get_last (dir);
-
   // update and save path
+  char * stop;
+
   char * dir_check = dir_path;
   char *dir_cpy = dir;   // copying path
-
-  int size_expected = strlen(dir_check) + strlen(dir_cpy);
+  int size_expected = strlen(dir_check) + strlen(dir_cpy) + 1;
 
   if(dir[0] == '/') // absolute
     dir_check = dir;
   else // relative
   {
-    int size_cat = strlcat (dir_check, dir_cpy, size_expected);
+    int size_cat = strlcat (dir_check, dir_cpy, size_expected) + 1;
     if(size_cat != size_expected)
       return false;
   }
+
+  get_last (dir_check, stop);
 
   // check if path is valid
   struct inode *cur_inode;
@@ -571,14 +574,18 @@ valid_mkdir (char *dir, struct dir *dir_to_add)
   char s[strlen(dir_check)];
   strlcpy(s, dir_check, strlen (dir_check)+1);  //moves path copy into s, add 1 for null
   char * token, save_ptr;
-
+  
   // go into each directory checking for validity
   for (token = strtok_r (s, "/", &save_ptr); token != NULL;
         token = strtok_r (NULL, "/", &save_ptr))
   {
     dir_to_add = directory; // should end up being the second to last one
-    if(token == stop) // last directory must not already exist (we are creating it)
+    if(strcmp(token, stop) == 0) // last directory must not already exist (we are creating it)
+    {
+      // printf("\n\ndir: %s\n\n", dir);
+      // printf("\n\ndir-to-add: %p\n\n", dir_to_add);
       return !dir_lookup (directory, token, cur_inode);
+    }
 
     if(!dir_lookup (directory, token, cur_inode)) // make sure the directroy exists
       return false;
@@ -587,23 +594,3 @@ valid_mkdir (char *dir, struct dir *dir_to_add)
   }
   return false; // shouldn't get here!
 }
-
-/*
-void dir_pieces (char *path, function *func)
-{
-  char *path_cpy = path;   // copying path
-  char *token, *save_ptr;       // for spliter
-  char s[strlen(path_cpy)];
-
-  strlcpy(s, path_cpy, strlen (path_cpy)+1);  //moves path copy into s, add 1 for null
-
-  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
-        token = strtok_r (NULL, " ", &save_ptr))
-  {    
-    // do func with the tokenized thing.
-    func (token);
-  }
-}
-*/
-
-

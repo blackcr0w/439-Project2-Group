@@ -242,12 +242,13 @@ inode_close (struct inode *inode)
 }
 
 /* Marks INODE to be deleted when it is closed by the last caller who
-   has it open. */
+   has it open. Resets length of inode to 0*/
 void
-inode_remove (struct inode *inode) 
+inode_remove (struct inode *inode)
 {
   ASSERT (inode != NULL);
   inode->removed = true;
+  inode->data.length = 0;
 }
 
 /* Reads SIZE bytes from INODE into BUFFER, starting at position OFFSET.
@@ -265,12 +266,23 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) //n
       /* Disk sector to read, starting byte offset within sector. */
       block_sector_t sector_idx = byte_to_sector (inode, offset);
 
-   /*   if(offset > size)
-        return 0;*/
+      // if the data starts beyond it
+      if(inode->data.length < offset)
+        return 0;
+
+      uint32_t endpoint_of_file = offset + inode->data.start;
+      uint32_t endpoint_of_read = inode->data.start + size;
+
+      // if trying to read beyond the file (partial read)
+      if(endpoint_of_read > endpoint_of_file)
+      {
+        // help
+        // do we need to do anything here or is this 
+        // already handled below?
+      }
 
 
-
-      ASSERT(sector_idx);
+    //  ASSERT(sector_idx);
       int sector_ofs = offset % BLOCK_SECTOR_SIZE;
 
       /* Bytes left in inode, bytes left in sector, lesser of the two. */
@@ -319,14 +331,16 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) //n
    growth is not yet implemented.) */
 off_t
 inode_write_at (struct inode *inode, const void *buffer_, off_t size,
-                off_t offset) 
+                off_t offset)  
 {
   const uint8_t *buffer = buffer_;
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
   struct inode_disk *disk_inode = NULL;
   disk_inode = calloc (1, sizeof *disk_inode);
-  disk_inode->length = size;
+
+  disk_inode->length = size + offset; // adds size plus offset as write can overwright data in inode
+
   disk_inode->magic = INODE_MAGIC;
 
   if (inode->deny_write_cnt)

@@ -20,7 +20,6 @@ dir_create (block_sector_t sector, size_t entry_cnt)
 
   dir_add (first_dir, dot, sector);
   dir_add (first_dir, dotdot, sector);
-
   return success;
 }
 
@@ -143,6 +142,7 @@ dir_lookup (const struct dir *dir, const char *name,
 bool
 dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
 {
+  printf("is_add of : %s\n\n\n", name);
   struct dir_entry e;
   off_t ofs;
   bool success = false;
@@ -158,7 +158,10 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   
   /* Check that NAME is not in use. */
   if (lookup (dir, name, NULL, NULL))
+  {
+  //  printf("got into this weird lookup statement\n\n\n");
     goto done;
+  }
 
   /* Set OFS to offset of free slot.
      If there are no free slots, then it will be set to the
