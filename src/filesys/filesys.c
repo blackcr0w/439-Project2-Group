@@ -7,9 +7,12 @@
 #include "filesys/inode.h"
 #include "filesys/directory.h"
 #include "userprog/syscall.h"
+#include "threads/thread.h"
 
 /* Partition that contains the file system. */
 struct block *fs_device;
+
+int i;
 
 static void do_format (void);
 
@@ -29,6 +32,8 @@ filesys_init (bool format)
     do_format ();
 
   free_map_open ();
+
+  i = 0;
 }
 
 /* Shuts down the file system module, writing any unwritten data
@@ -85,17 +90,48 @@ filesys_create (const char *name, off_t initial_size)
     directory = dir_open (cur_inode);
   }
 
-  get_last(name, last);*/
 
-  block_sector_t inode_sector = 0;
-  struct dir *dir = dir_open_root ();
-  bool success = (dir != NULL
-                  && free_map_allocate (1, &inode_sector)
-                  && inode_create (inode_sector, initial_size)
-                  && dir_add (dir, name, inode_sector));
+*/
+
+  bool success = true;
+
+ // printf("file: %s\n\n", last);
+  if(i <= 1)
+  {
+printf("file1: %s\n\n", name);
+    block_sector_t inode_sector = 0;
+    struct dir *dir = dir_open_root ();  // changed to current directory from root
+    success = (dir != NULL
+                    && free_map_allocate (1, &inode_sector)
+                    && inode_create (inode_sector, initial_size)
+                    && dir_add (dir, name, inode_sector));
+    i++;
+  }
+  else
+  {
+    char *last;
+    get_last(name, last);
+   printf("file2: %p\n\n", last);
+    printf("file2: %s\n\n", last);
+    block_sector_t inode_sector = 0;
+    struct dir *dir = dir_open_root ();  // changed to current directory from root
+    success = (dir != NULL
+                    && free_map_allocate (1, &inode_sector)
+                    && inode_create (inode_sector, initial_size)
+                    && dir_add (dir, last, inode_sector));
+  }
+ // dir_add (dir, "b", inode_sector);
+// struct inode *meh;
+  /* if(dir_lookup (dir, "b", meh))
+  {
+    printf("\n\ngot to filesys_create\n\n");
+  }
+
   if (!success && inode_sector != 0) 
     free_map_release (inode_sector, 1);
   dir_close (dir);
+*/
+ 
  //printf("got to filesys_create: %s\n\n\n", name);
 
   return success;

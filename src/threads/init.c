@@ -117,7 +117,7 @@ main (void)
 
   /* Start thread scheduler and enable interrupts. */
   thread_start ();
-  printf("\n\nFILESYS INIT\n\n");
+ // printf("\n\nFILESYS INIT\n\n");
   serial_init_queue ();
   timer_calibrate ();
 

@@ -242,11 +242,13 @@ wait (pid_t pid)
 bool 
 create (const char *file, unsigned initial_size)
 {
-  //printf("file: %s\n\n", file);
+
   sema_down (&sema_files); // prevent multi-file manipulation
   bool res = filesys_create (file, initial_size);  // save result
   sema_up (&sema_files);   // release file
   return res;
+
+
 }
 
 //Jeff driving here
@@ -424,14 +426,16 @@ bool
 chdir (const char *dir)
 {
   struct dir *curr_dir = get_dir (dir);
-
   if(curr_dir->pos == -1)
   {
     free (curr_dir);
     return false;
   }
+
   // update the current directory
   *(thread_current ()->current_dir) = *curr_dir;
+
+
   return true;
 }
 
@@ -439,13 +443,12 @@ chdir (const char *dir)
 bool 
 mkdir (const char *dir)
 {
-  struct dir curr_dir = *dir_open_root ();
+  struct dir * curr_dir = dir_open_root ();
   char *stop;
   get_last (dir, stop); // directory to make
 
 
   // search through directories
-
   char s[strlen(dir)];
   strlcpy(s, dir, strlen (dir)+1);  //moves path copy into s, add 1 for null
   char * token, save_ptr;
@@ -459,8 +462,10 @@ mkdir (const char *dir)
     if(strcmp(token, stop) == 0) // HELP: is this a valid directory: hello/hello/hello // maybe just use a counter of the numbers of end stop things and decrement
     {
       // if the directory already exists, return false
-      if(dir_lookup (&curr_dir, token, cur_inode))
+     /* if(dir_lookup (curr_dir, token, cur_inode))
+      {
         return false;
+      }*/ // Help: come back to this later
 
       // get an available sector
       block_sector_t sector = 0;
@@ -468,17 +473,17 @@ mkdir (const char *dir)
       dir_create (sector, 128);
 
       // curr_dir is the parent directory of the directory to make
-      dir_add (&curr_dir, stop, sector);
+      dir_add (curr_dir, stop, sector);
  
       return true;
     }
 
     // make sure the directory exists
-    if(!dir_lookup (&curr_dir, token, cur_inode))
+    if(!dir_lookup (curr_dir, token, cur_inode))
       return false;
 
     // go into the next directory
-    curr_dir = *dir_open (cur_inode);
+    curr_dir = dir_open (cur_inode);
   }
   return false; // should never get here
 }
@@ -519,6 +524,7 @@ get_last (char * path, char * stop)
   char *token, *save_ptr;       // for spliter
   char s[strlen(path)];
   char *save_tok;
+ // bool 
   
 
   strlcpy(s, path, strlen (path)+1);  //moves path copy into s, add 1 for null
@@ -526,6 +532,7 @@ get_last (char * path, char * stop)
   for (token = strtok_r (s, "/", &save_ptr); token != NULL;
         token = strtok_r (NULL, "/", &save_ptr))
   {
+   // printf("file: %s\n\n", token);
     if(token != NULL)
     {    
       save_tok = token;
@@ -535,6 +542,8 @@ get_last (char * path, char * stop)
   strlcpy (save, save_tok, strlen (save_tok)+1); 
 
   stop = (char*) save;
+  printf("file3: %p\n", stop);
+  printf("file3: %s\n\n", stop);
 }
 
 // return the directory corresponding to passed in dir string
@@ -549,7 +558,6 @@ get_dir (char *dir)
   // bad dir to return later
   struct dir *bad_dir = calloc (1, sizeof (struct dir));
   bad_dir->pos = -1;
-
   // copy dir into s (to preserve it) and make sure copy was successful
   if(strlcpy (s, dir, strlen (dir)+1) != strlen (dir))
     return bad_dir;
@@ -565,7 +573,11 @@ get_dir (char *dir)
         token = strtok_r (NULL, "/", &save_ptr))
   {    
     if(!dir_lookup (curr_dir, token, cur_inode)) // make sure directory exists
+    {
+     // printf("\nmkdir %s\n\n", curr_dir);
       return bad_dir;
+      
+    }
 
     curr_dir = dir_open (cur_inode); // HELP: need to close each thing opened because malloc (might run out of memory). One idea is a global list of opened stuff.
   }

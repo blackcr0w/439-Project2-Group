@@ -126,7 +126,6 @@ dir_lookup (const struct dir *dir, const char *name,
   }
   else
   {
-    
     *inode = NULL;
   }
 
@@ -182,6 +181,13 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   success = inode_write_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
 
  done:
+ 
+/*
+  struct inode *meh;
+   if(dir_lookup (dir, "", meh))
+  {
+    printf("\n\ngot to filesys_create\n\n");
+  }*/
   return success;
 }
 
