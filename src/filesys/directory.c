@@ -142,7 +142,7 @@ dir_lookup (const struct dir *dir, const char *name,
 bool
 dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
 {
-  printf("is_add of : %s\n\n\n", name);
+ // printf("is_add of : %s\n\n\n", name);
   struct dir_entry e;
   off_t ofs;
   bool success = false;

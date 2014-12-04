@@ -117,6 +117,7 @@ main (void)
 
   /* Start thread scheduler and enable interrupts. */
   thread_start ();
+  printf("\n\nFILESYS INIT\n\n");
   serial_init_queue ();
   timer_calibrate ();
 
@@ -136,7 +137,7 @@ main (void)
   shutdown ();
   thread_exit ();
 }
-
+
 /* Clear the "BSS", a segment that should be initialized to
    zeros.  It isn't actually stored on disk or zeroed by the
    kernel loader, so we have to zero it ourselves.

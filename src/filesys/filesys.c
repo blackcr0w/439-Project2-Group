@@ -49,7 +49,7 @@ filesys_create (const char *name, off_t initial_size)
   // added this below segment to get the directory to add to and
   // get the actual name of the directory (not the whole path)
   // help, is this the correct thing to do (also the correct place to do it)
-  char * last;
+  /*char * last;
   char * dir_check = dir_path;
   char *dir_cpy = name;   // copying path
 
@@ -77,15 +77,15 @@ filesys_create (const char *name, off_t initial_size)
         token = strtok_r (NULL, "/", &save_ptr))
   {    
     // help dir_lookup causes a panic. Why? Why. Why!
-    /*if(!dir_lookup (directory, token, cur_inode)) // make sure directory exists
-    {  
-      return false;
-    }*/
+    //if(!dir_lookup (directory, token, cur_inode)) // make sure directory exists
+   // {  
+    //  return false;
+   // }
 
     directory = dir_open (cur_inode);
   }
 
-  get_last(name, last);
+  get_last(name, last);*/
 
   block_sector_t inode_sector = 0;
   struct dir *dir = dir_open_root ();

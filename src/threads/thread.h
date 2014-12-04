@@ -122,6 +122,7 @@ struct thread
     int exit_status; // the exit status of this thread
     int load; // if the thread successfully loaded
 
+    struct dir *current_dir; // the current working directory for this thread
 
 /*      End of Project 2 elements         */
     struct condition *conWait;

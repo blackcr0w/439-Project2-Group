@@ -55,6 +55,21 @@ process_execute (const char *file_name)
 
   struct thread *child = get_thread_tid (tid);
 
+  
+
+// setup directory stuff
+  struct dir *current_dir = cur->current_dir;
+
+  // start working directory at the root
+  if(current_dir == NULL)
+    child->current_dir = dir_open_root ();
+
+  // start working directory at the parent
+  else
+    child->current_dir = cur->current_dir;
+
+
+
   if(!child == NULL)
   {
     child->parent = cur;  // if the child exists set its parent to the current thread
@@ -90,6 +105,10 @@ start_process (void *file_name_)
     thread_current ()->load = 0;
     thread_exit ();
   }
+
+
+    
+
 
 
   /* Start the user process by simulating a return from an

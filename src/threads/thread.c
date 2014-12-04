@@ -4,6 +4,7 @@
 #include <random.h>
 #include <stdio.h>
 #include <string.h>
+#include "filesys/directory.h"
 #include "threads/flags.h"
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
@@ -99,6 +100,19 @@ thread_init (void)
     initial_thread->tid = allocate_tid ();
 }
 
+/*
+    // setup directory stuff
+    struct dir *current_dir = thread_current ()->current_dir;
+
+    // start working directory at the root
+    if(current_dir == NULL)
+      t->current_dir = dir_open_root ();
+
+    // start working directory at the parent
+    else
+      t->current_dir = thread_current ()->current_dir;*/
+
+
 struct thread *
 get_thread_tid (tid_t tid)
 {
@@ -129,6 +143,7 @@ thread_start (void)
     /* Create the idle thread. */
     struct semaphore idle_started;
     sema_init (&idle_started, 0);
+    printf("\n\nFILESYS INIT\n\n");
     thread_create ("idle", PRI_MIN, idle, &idle_started);
 
     /* Start preemptive thread scheduling. */
@@ -252,8 +267,6 @@ thread_create (const char *name, int priority,
     /* Add to run queue. */
     thread_unblock (t);
 
-    /* modified */
-    // thread_yield();
 
     return tid;
 }

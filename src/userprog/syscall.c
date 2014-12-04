@@ -25,6 +25,7 @@ bool readdir (int fd, char *name);
 bool isdir (int fd);
 int inumber (int fd);
 void get_last (char * path, char * stop);
+struct dir* get_dir (char *dir);
 
 int exec (const char *cmd_line);
 struct semaphore sema_files;  // only allow one file operation at a time
@@ -241,7 +242,7 @@ wait (pid_t pid)
 bool 
 create (const char *file, unsigned initial_size)
 {
-  printf("file: %s\n\n", file);
+  //printf("file: %s\n\n", file);
   sema_down (&sema_files); // prevent multi-file manipulation
   bool res = filesys_create (file, initial_size);  // save result
   sema_up (&sema_files);   // release file
@@ -422,74 +423,64 @@ close (int fd)
 bool 
 chdir (const char *dir)
 {
-  // update and save path
-  char * dir_check = dir_path;
-  char *dir_cpy = dir;   // copying path
+  struct dir *curr_dir = get_dir (dir);
 
-  int size_expected = strlen(dir_check) + strlen(dir_cpy);
-
-  if(dir[0] == '/') // absolute
-    dir_check = dir;
-  else // relative
+  if(curr_dir->pos == -1)
   {
-    int size_cat = strlcat (dir_check, dir_cpy, size_expected);
-    if(size_cat != size_expected)
-      return false;
+    free (curr_dir);
+    return false;
   }
-
-  // check if path is valid
-  struct inode *cur_inode = calloc (1, sizeof (struct inode)); // allocate memory
-  struct dir *directory = dir_open_root ();
-
-  char s[strlen(dir_check)];
-  strlcpy(s, dir_check, strlen (dir_check)+1);  //moves path copy into s, add 1 for null
-  char * token, save_ptr;
-
-  // go into each directory checking for validity
-  for (token = strtok_r (s, "/", &save_ptr); token != NULL;
-        token = strtok_r (NULL, "/", &save_ptr))
-  {    
-    if(!dir_lookup (directory, token, cur_inode)) // make sure directory exists
-    {  
-      return false;
-    }
-
-    directory = dir_open (cur_inode);
-  }
-  strlcpy (dir_path, dir_check, size_expected);
-  // dir_path = dir_check;
-  return true; // if every subdirectory is good, we are good to go!
+  // update the current directory
+  *(thread_current ()->current_dir) = *curr_dir;
+  return true;
 }
 
 /* Create a directory. */
 bool 
 mkdir (const char *dir)
 {
-  char * name;
+  struct dir curr_dir = *dir_open_root ();
+  char *stop;
+  get_last (dir, stop); // directory to make
 
-  struct dir *directory_to_add;
 
-  // make sure the given path is valid
-  if(!valid_mkdir (dir, directory_to_add))
-    return false;
+  // search through directories
 
-/*  if(dir_open_root ()->pos == directory_to_add->pos)
-      printf("\n\nYES!\n\n");
-  else
-    printf("root not equal\n\n\n");*/
- // get_last(dir, name); //path
- // name = "a";
+  char s[strlen(dir)];
+  strlcpy(s, dir, strlen (dir)+1);  //moves path copy into s, add 1 for null
+  char * token, save_ptr;
+  struct inode *cur_inode;
 
-  block_sector_t sector = 0;
-  free_map_allocate (1, &sector);
- //    printf("\nLookup worked %s\n\n", directory_to_add);
+  // go into each directory checking for validity
+  for (token = strtok_r (s, "/", &save_ptr); token != NULL;
+        token = strtok_r (NULL, "/", &save_ptr))
+  {
+    // check that the last directory doesn't already exist (we are creating it)
+    if(strcmp(token, stop) == 0) // HELP: is this a valid directory: hello/hello/hello // maybe just use a counter of the numbers of end stop things and decrement
+    {
+      // if the directory already exists, return false
+      if(dir_lookup (&curr_dir, token, cur_inode))
+        return false;
 
-  //make new inode
+      // get an available sector
+      block_sector_t sector = 0;
+      free_map_allocate (1, &sector);
+      dir_create (sector, 128);
 
-  dir_create (sector, 128);
-  dir_add (dir_open_root (), dir, sector); // dir_open_root () should be directory_to_add HELP dir needs to be last
+      // curr_dir is the parent directory of the directory to make
+      dir_add (&curr_dir, stop, sector);
  
-  return true;
+      return true;
+    }
+
+    // make sure the directory exists
+    if(!dir_lookup (&curr_dir, token, cur_inode))
+      return false;
+
+    // go into the next directory
+    curr_dir = *dir_open (cur_inode);
+  }
+  return false; // should never get here
 }
 
  /* Reads a directory entry. */
@@ -546,51 +537,39 @@ get_last (char * path, char * stop)
   stop = (char*) save;
 }
 
-bool
-valid_mkdir (char *dir, struct dir *dir_to_add)
+// return the directory corresponding to passed in dir string
+struct dir*
+get_dir (char *dir)
 {
-  // update and save path
-  char * stop;
+  struct dir *save_dir = thread_current ()->current_dir;
+  struct dir *curr_dir = save_dir; // prevent actual updating
+  char *token, save_ptr;
+  char s[strlen(dir)];
 
-  char * dir_check = dir_path;
-  char *dir_cpy = dir;   // copying path
-  int size_expected = strlen(dir_check) + strlen(dir_cpy) + 1;
+  // bad dir to return later
+  struct dir *bad_dir = calloc (1, sizeof (struct dir));
+  bad_dir->pos = -1;
 
-  if(dir[0] == '/') // absolute
-    dir_check = dir;
-  else // relative
-  {
-    int size_cat = strlcat (dir_check, dir_cpy, size_expected) + 1;
-    if(size_cat != size_expected)
-      return false;
-  }
+  // copy dir into s (to preserve it) and make sure copy was successful
+  if(strlcpy (s, dir, strlen (dir)+1) != strlen (dir))
+    return bad_dir;
 
-  get_last (dir_check, stop);
+  if(dir[0] == '/') // absolute, start at the top (root)
+    curr_dir = dir_open_root ();
 
-  // check if path is valid
-  struct inode *cur_inode;
-  struct dir *directory = dir_open_root ();
+  // if relative, keep curr_dir where it is and go from there
 
-  char s[strlen(dir_check)];
-  strlcpy(s, dir_check, strlen (dir_check)+1);  //moves path copy into s, add 1 for null
-  char * token, save_ptr;
-  
+  struct inode *cur_inode = calloc (1, sizeof (struct inode)); // allocate memory
   // go into each directory checking for validity
   for (token = strtok_r (s, "/", &save_ptr); token != NULL;
         token = strtok_r (NULL, "/", &save_ptr))
-  {
-    dir_to_add = directory; // should end up being the second to last one
-    if(strcmp(token, stop) == 0) // last directory must not already exist (we are creating it)
-    {
-      // printf("\n\ndir: %s\n\n", dir);
-      // printf("\n\ndir-to-add: %p\n\n", dir_to_add);
-      return !dir_lookup (directory, token, cur_inode);
-    }
+  {    
+    if(!dir_lookup (curr_dir, token, cur_inode)) // make sure directory exists
+      return bad_dir;
 
-    if(!dir_lookup (directory, token, cur_inode)) // make sure the directroy exists
-      return false;
-
-    directory = dir_open (cur_inode);
+    curr_dir = dir_open (cur_inode); // HELP: need to close each thing opened because malloc (might run out of memory). One idea is a global list of opened stuff.
   }
-  return false; // shouldn't get here!
+
+  free (bad_dir);
+  return curr_dir;
 }
