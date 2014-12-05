@@ -7,11 +7,12 @@
 
 /* Creates a directory with space for ENTRY_CNT entries in the
    given SECTOR.  Returns true if successful, false on failure. */
+// Spencer and Jefferson driving
 bool
 dir_create (block_sector_t sector, size_t entry_cnt)
 {
-  bool success = inode_create (sector, entry_cnt * sizeof (struct dir_entry));
-
+  bool success = inode_create (sector, 25 * sizeof (struct dir_entry));
+ // printf("\nentrysize: %d\n\n", entry_cnt);
   struct dir *first_dir = dir_open (inode_open (sector));
   first_dir->inode->is_dir = -1;
 
@@ -138,10 +139,10 @@ dir_lookup (const struct dir *dir, const char *name,
    Returns true if successful, false on failure.
    Fails if NAME is invalid (i.e. too long) or a disk or memory
    error occurs. */
+// Spencer, Jefferson, Cohen, Dakota driving
 bool
 dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
 {
- // printf("is_add of : %s\n\n\n", name);
   struct dir_entry e;
   off_t ofs;
   bool success = false;
@@ -151,16 +152,11 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
 
   /* Check NAME for validity. */
   if (*name == '\0' || strlen (name) > NAME_MAX)
-  {
     return false;
-  }
   
   /* Check that NAME is not in use. */
   if (lookup (dir, name, NULL, NULL))
-  {
-  //  printf("got into this weird lookup statement\n\n\n");
     goto done;
-  }
 
   /* Set OFS to offset of free slot.
      If there are no free slots, then it will be set to the
@@ -171,8 +167,12 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
      read due to something intermittent such as low memory. */
   for (ofs = 0; inode_read_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
        ofs += sizeof e) 
+  {
+   // printf("\noffset is: %d\n\n", ofs);
     if (!e.in_use)
       break;
+  }
+    
 
   /* Write slot. */
   e.in_use = true;
@@ -180,14 +180,7 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   e.inode_sector = inode_sector;
   success = inode_write_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
 
- done:
- 
-/*
-  struct inode *meh;
-   if(dir_lookup (dir, "", meh))
-  {
-    printf("\n\ngot to filesys_create\n\n");
-  }*/
+  done:
   return success;
 }
 
@@ -234,7 +227,6 @@ dir_remove (struct dir *dir, const char *name)
 bool
 dir_readdir (struct dir *dir, char name[NAME_MAX + 1])
 {
- 
   struct dir_entry e;
   while (inode_read_at (dir->inode, &e, sizeof e, dir->pos) == sizeof e) 
     {

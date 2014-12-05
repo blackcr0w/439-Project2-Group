@@ -18,7 +18,6 @@ static void syscall_handler (struct intr_frame *);
 
 // HELP!!!!!!!!!!!!!! Is this crit. sec to big
 
-
 bool valid_mkdir (char *dir, struct dir *dir_to_add);
 char * get_cmd_line(char * cmd_line);
 bool chdir (const char *dir);
@@ -216,7 +215,7 @@ exit (int status)
  
   thread_exit (); 
 }
- 
+
 // execute the given command line
 //Dakota driving here
 int 
@@ -333,6 +332,7 @@ write (int fd, const void *buffer, unsigned size)
 {
   struct thread * cur = thread_current ();
 
+
   if(fd > 0 && fd <= cur->fd_index && buffer != NULL)
   {
     sema_down (&sema_files);
@@ -355,9 +355,17 @@ write (int fd, const void *buffer, unsigned size)
     // write to file
     if(fd != 0 && fd != 1)
     {
+     struct file* temp_file = cur->file_pointers[fd];
+
+      if(temp_file->inode->is_dir == -1)
+      {
+        sema_up (&sema_files);
+        return -1;
+      }
+
       sema_up (&sema_files);
       struct thread *cur = thread_current ();
- 
+
 
       return file_write (cur->file_pointers[fd], buffer, size);
     }
@@ -370,7 +378,7 @@ write (int fd, const void *buffer, unsigned size)
   return 0;
 }
 
-//Spencer driving here
+// Spencer driving here
 void 
 seek (int fd , unsigned position)
 {
@@ -387,7 +395,7 @@ seek (int fd , unsigned position)
   }
 }
 
-//Cohen driving here
+// Cohen driving here
 unsigned  
 tell (int fd)
 {
@@ -406,7 +414,7 @@ tell (int fd)
   return res;
 }
  
-//Dakota driving here
+// Dakota driving here
 void 
 close (int fd)
 {
@@ -427,6 +435,7 @@ close (int fd)
 }
 
 /* Change the current directory. */
+// Spencer driving
 bool 
 chdir (const char *dir)
 {
@@ -447,6 +456,7 @@ chdir (const char *dir)
 }
 
 /* Create a directory. */
+// Dakota driving
 bool 
 mkdir (const char *dir)
 {
@@ -505,7 +515,7 @@ mkdir (const char *dir)
       curr_dir->empty = false;
       sema_up (&sema_files); // release file
       return false;
-    }
+    } 
 
     // go into the next directory
     curr_dir = dir_open (cur_inode);
@@ -516,15 +526,14 @@ mkdir (const char *dir)
 }
 
  /* Reads a directory entry. */
+// Jefferson driving
 bool 
 readdir (int fd, char *name)
 {
   sema_down (&sema_files); // prevent multi-file manipulation
   struct file * f_dir = thread_current ()->file_pointers[fd];
-  
   struct dir *new_dir = calloc (1, sizeof (struct dir));
-
-
+//ASSERT(false);
   new_dir->inode = f_dir->inode;
 
   new_dir->pos = f_dir->pos;
@@ -533,6 +542,7 @@ readdir (int fd, char *name)
 }
 
 /* Tests if a fd represents a directory. */
+// Cohen driving
 bool 
 isdir (int fd)
 {
@@ -541,6 +551,7 @@ isdir (int fd)
 }
 
 /* Returns the inode number for a fd. */
+// Spencer driving
 int 
 inumber (int fd)
 {
@@ -549,6 +560,7 @@ inumber (int fd)
 }
 
 // gets the last token in the path split by '/'
+// Dakota driving
 void
 get_last (char * path, char *stop)
 {
@@ -573,6 +585,7 @@ get_last (char * path, char *stop)
 }
 
 // return the directory corresponding to passed in dir string
+// Jefferson driving
 struct dir*
 get_dir (char *dir)
 {
@@ -598,6 +611,7 @@ get_dir (char *dir)
   for (token = strtok_r (s, "/", &save_ptr); token != NULL;
         token = strtok_r (NULL, "/", &save_ptr))
   {    
+    //printf("\ntoken: %s", token);
     if(!dir_lookup (curr_dir, token, cur_inode)) // make sure directory exists
     {
      // printf("\nmkdir %s\n\n", curr_dir);

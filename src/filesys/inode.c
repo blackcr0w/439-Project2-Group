@@ -30,6 +30,7 @@ bytes_to_sectors (off_t size)
    within INODE.
    Returns -1 if INODE does not contain data for a byte at offset
    POS. */
+// Jefferson and Dakota driving
 static block_sector_t
 byte_to_sector (const struct inode *inode, off_t pos) // math goes here for figuring out offset
 {
@@ -87,6 +88,7 @@ inode_init (void)
    device.
    Returns true if successful.
    Returns false if memory or disk allocation fails. */
+// Cohen, Jefferson and Dakota driving
 bool
 inode_create (block_sector_t sector, off_t length)
 {
@@ -164,6 +166,7 @@ inode_create (block_sector_t sector, off_t length)
 /* Reads an inode from SECTOR
    and returns a `struct inode' that contains it.
    Returns a null pointer if memory allocation fails. */
+// Spencer driving
 struct inode *
 inode_open (block_sector_t sector)
 {
@@ -243,6 +246,7 @@ inode_close (struct inode *inode)
 
 /* Marks INODE to be deleted when it is closed by the last caller who
    has it open. Resets length of inode to 0*/
+// Cohen driving
 void
 inode_remove (struct inode *inode)
 {
@@ -254,6 +258,7 @@ inode_remove (struct inode *inode)
 /* Reads SIZE bytes from INODE into BUFFER, starting at position OFFSET.
    Returns the number of bytes actually read, which may be less
    than SIZE if an error occurs or end of file is reached. */
+// Dakota driving
 off_t
 inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) //not finding name in the dir
 {
@@ -267,8 +272,8 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) //n
       block_sector_t sector_idx = byte_to_sector (inode, offset);
 
       // if the data starts beyond it
-      if(inode->data.length <= offset)
-        return 0;
+     /* if(inode->data.length <= offset)
+        return 0; */
 
       uint32_t endpoint_of_file = offset + inode->data.start;
       uint32_t endpoint_of_read = inode->data.start + size;
@@ -326,6 +331,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) //n
    less than SIZE if end of file is reached or an error occurs.
    (Normally a write at end of file would extend the inode, but
    growth is not yet implemented.) */
+// Jefferson and Spencer driving
 off_t
 inode_write_at (struct inode *inode, const void *buffer_, off_t size,
                 off_t offset)  
@@ -343,10 +349,8 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   if (inode->deny_write_cnt)
     return 0;
 
-     printf("\n\nksuagd1\n\n");
   while (size > 0) 
     {
-         printf("\n\nksuagd2\n\n");
       /* Sector to write, starting byte offset within sector. */
       block_sector_t sector_idx = byte_to_sector (inode, offset);
       int sector_ofs = offset % BLOCK_SECTOR_SIZE;
@@ -356,7 +360,6 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
       int sector_left = BLOCK_SECTOR_SIZE - sector_ofs;
       int min_left = inode_left < sector_left ? inode_left : sector_left;
 
-         printf("\n\nksuagd3\n\n");
       /* Number of bytes to actually write into this sector. */
       int chunk_size = size < min_left ? size : min_left;
       if (chunk_size <= 0)
@@ -364,10 +367,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
         // figure out if part of direct, indirect or doubly indirect.
 
         off_t remaining_size = size - bytes_written;
-         printf("\n\remaining size: %d\n\n", remaining_size);
-          printf("\n\nsize: %d\n\n", size);
         int sectors_to_alloc = divide_up (remaining_size);
-           printf("\n\nksuagd4: %d\n\n", sectors_to_alloc);
 
         // maybe put our code in here
         free_map_allocate (sectors_to_alloc, disk_inode -> sectors[sector_idx]);
@@ -375,17 +375,14 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
 
       if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE)
         {
-             printf("\n\nksuagd5\n\n");
           /* Write full sector directly to disk. */
           block_write (fs_device, sector_idx, buffer + bytes_written);
         }
       else 
         {
-             printf("\n\nksuagd6\n\n");
           /* We need a bounce buffer. */
           if (bounce == NULL) 
             {
-                 printf("\n\nksuagd7\n\n");
               bounce = malloc (BLOCK_SECTOR_SIZE);
               if (bounce == NULL)
                 break;
@@ -396,27 +393,22 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
              first.  Otherwise we start with a sector of all zeros. */
           if (sector_ofs > 0 || chunk_size < sector_left)
           {
-               printf("\n\nksuagd8\n\n");
             block_read (fs_device, sector_idx, bounce);
           } 
           else
           {
-               printf("\n\nksuagd9\n\n");
             memset (bounce, 0, BLOCK_SECTOR_SIZE);
           }
-             printf("\n\nksuagd10\n\n");
           memcpy (bounce + sector_ofs, buffer + bytes_written, chunk_size);
           block_write (fs_device, sector_idx, bounce);
         }
 
       /* Advance. */
-           printf("\n\nksuagd11\n\n");
       size -= chunk_size;
       offset += chunk_size;
       bytes_written += chunk_size;
     }
   free (bounce);
-   printf("\n\nksuagd12\n\n");
   return bytes_written;
 }
 

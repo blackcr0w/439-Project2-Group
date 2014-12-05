@@ -11,13 +11,13 @@
 
 /* Partition that contains the file system. */
 struct block *fs_device;
-
 int i;
 
 static void do_format (void);
 
 /* Initializes the file system module.
    If FORMAT is true, reformats the file system. */
+// Dakota driving
 void
 filesys_init (bool format) 
 {
@@ -48,6 +48,7 @@ filesys_done (void)
    Returns true if successful, false otherwise.
    Fails if a file named NAME already exists,
    or if internal memory allocation fails. */
+// Dakota driving
 bool
 filesys_create (const char *name, off_t initial_size) 
 {
@@ -97,6 +98,7 @@ filesys_create (const char *name, off_t initial_size)
    otherwise.
    Fails if no file named NAME exists,
    or if an internal memory allocation fails. */
+// Jefferson driving
 struct file *
 filesys_open (const char *name)
 {
@@ -118,10 +120,6 @@ filesys_open (const char *name)
   {
     success = dir_lookup (dir, name, &inode); // incomplete Help:
   }
-    
-/*
-  if(!success)
-    printf("\nsuccess failed\n\n");*/
   
   dir_close (dir);
   return file_open (inode);
@@ -131,10 +129,10 @@ filesys_open (const char *name)
    Returns true if successful, false on failure.
    Fails if no file named NAME exists,
    or if an internal memory allocation fails. */
+// Spencer driving
 bool
 filesys_remove (const char *path) 
 {
-    printf("\n\n\nGOTRHOIHS\n\n\n");
   
   if(strcmp(path, "/")==0)
     return false;
@@ -165,12 +163,15 @@ filesys_remove (const char *path)
   strlcpy (delete, save_tok, strlen (save_tok)+1); 
 
 
-  bool success = dir != NULL && dir_remove (dir, delete);
+  // if(dir->inode == dir_open_root ()->inode) // help: not equal to the root, should be able to just use dir
+    // printf("\n\ndir is the root\n\n\n\n");
+
+  bool success = dir != NULL && dir_remove (dir_open_root (), delete);
   dir_close (dir); 
 
   return success;
-}
-
+} 
+ 
 /* Formats the file system. */
 static void
 do_format (void)
