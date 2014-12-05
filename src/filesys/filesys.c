@@ -51,54 +51,11 @@ filesys_done (void)
 bool
 filesys_create (const char *name, off_t initial_size) 
 {
-  // added this below segment to get the directory to add to and
-  // get the actual name of the directory (not the whole path)
-  // help, is this the correct thing to do (also the correct place to do it)
-  /*char * last;
-  char * dir_check = dir_path;
-  char *dir_cpy = name;   // copying path
-
-  int size_expected = strlen(dir_check) + strlen(dir_cpy);
-
-  if(name[0] == '/') // absolute
-    dir_check = name;
-  else // relative
-  {
-    int size_cat = strlcat (dir_check, dir_cpy, size_expected);
-    if(size_cat != size_expected)
-      return false;
-  }
-
-  // check if path is valid
-  struct inode *cur_inode = calloc (1, sizeof (struct inode)); // allocate memory
-  struct dir *directory = dir_open_root ();
-
-  char s[strlen(dir_check)];
-  strlcpy(s, dir_check, strlen (dir_check)+1);  //moves path copy into s, add 1 for null
-  char * token, save_ptr;
-
-  // go into each directory checking for validity
-  for (token = strtok_r (s, "/", &save_ptr); token != NULL;
-        token = strtok_r (NULL, "/", &save_ptr))
-  {    
-    // help dir_lookup causes a panic. Why? Why. Why!
-    //if(!dir_lookup (directory, token, cur_inode)) // make sure directory exists
-   // {  
-    //  return false;
-   // }
-
-    directory = dir_open (cur_inode);
-  }
-
-
-*/
 
   bool success = true;
 
- // printf("file: %s\n\n", last);
-  if(i <= 1)
+  if (i <= 1) // Help: plz
   {
-printf("file1: %s\n\n", name);
     block_sector_t inode_sector = 0;
     struct dir *dir = dir_open_root ();  // changed to current directory from root
     success = (dir != NULL
@@ -109,34 +66,32 @@ printf("file1: %s\n\n", name);
   }
   else
   {
-    char *last;
-    get_last(name, last);
-   printf("file2: %p\n\n", last);
-    printf("file2: %s\n\n", last);
+    char *token, *save_ptr;       // for spliter
+    char s[strlen(name)];
+    char *save_tok;
+
+    strlcpy (s, name, strlen (name)+1);  //moves path copy into s, add 1 for null
+
+    for (token = strtok_r (s, "/", &save_ptr); token != NULL;
+          token = strtok_r (NULL, "/", &save_ptr))
+      if(token != NULL)  
+        save_tok = token;
+
+    char save[strlen(save_tok)];
+    strlcpy (save, save_tok, strlen (save_tok)+1); 
+
+ 
+
     block_sector_t inode_sector = 0;
-    struct dir *dir = dir_open_root ();  // changed to current directory from root
+    struct dir *dir = thread_current()->current_dir;  // Help: changed to current directory from root
     success = (dir != NULL
                     && free_map_allocate (1, &inode_sector)
                     && inode_create (inode_sector, initial_size)
-                    && dir_add (dir, last, inode_sector));
-  }
- // dir_add (dir, "b", inode_sector);
-// struct inode *meh;
-  /* if(dir_lookup (dir, "b", meh))
-  {
-    printf("\n\ngot to filesys_create\n\n");
-  }
-
-  if (!success && inode_sector != 0) 
-    free_map_release (inode_sector, 1);
-  dir_close (dir);
-*/
+                    && dir_add (dir, save, inode_sector));
+    }
  
- //printf("got to filesys_create: %s\n\n\n", name);
-
   return success;
 }
-
 /* Opens the file with the given NAME.
    Returns the new file if successful or a null pointer
    otherwise.
@@ -145,15 +100,30 @@ printf("file1: %s\n\n", name);
 struct file *
 filesys_open (const char *name)
 {
+  bool success = true;
   struct dir *dir = dir_open_root ();
   struct inode *inode = NULL;
 
-  if (dir != NULL)
+  if(strcmp(name, "/") == 0)
   {
-    dir_lookup (dir, name, &inode);  //single pointer?
+    return file_open(dir->inode);
   }
-  dir_close (dir);
 
+  if (dir != NULL && name[0] == '/')
+  {
+    success = dir_lookup (dir, name+1, &inode);
+  } 
+
+  else
+  {
+    success = dir_lookup (dir, name, &inode); // incomplete Help:
+  }
+    
+/*
+  if(!success)
+    printf("\nsuccess failed\n\n");*/
+  
+  dir_close (dir);
   return file_open (inode);
 }
 
@@ -170,7 +140,7 @@ filesys_remove (const char *name)
 
   return success;
 }
-
+
 /* Formats the file system. */
 static void
 do_format (void)

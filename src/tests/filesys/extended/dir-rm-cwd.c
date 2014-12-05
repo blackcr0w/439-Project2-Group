@@ -13,6 +13,7 @@ wrap_open (const char *name)
   int fd, i;
 
   CHECK ((fd = open (name)) > 1, "open \"%s\"", name);
+
   for (i = 0; i < fd_cnt; i++)
     if (fds[i] == fd)
       fail ("fd returned is not unique");
@@ -30,6 +31,10 @@ test_main (void)
   CHECK (mkdir ("a"), "mkdir \"a\"");
 
   a_fd0 = wrap_open ("/a");
+
+  //printf("\nright before it %s\n\n", name);
+
+
   CHECK (!readdir (a_fd0, name), "verify \"/a\" is empty");
   CHECK (inumber (root_fd) != inumber (a_fd0),
          "\"/\" and \"/a\" must have different inumbers");

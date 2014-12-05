@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 char dir_path [500]; // limit size of directory path to 500 characters
+char *stop_last;
 
 // define pid_t
 typedef int pid_t;

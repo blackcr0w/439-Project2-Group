@@ -265,10 +265,12 @@ remove (const char *file)
 int 
 open (const char *file)
 {
+
   sema_down (&sema_files); // prevent multi-file manipulation
   
   struct thread *cur = thread_current ();
   cur->file_pointers[cur->fd_index] = filesys_open (file);
+ // printf("\n open \n\n");
 
   // if file is null -1, else return incremented index
   int res = (cur->file_pointers[cur->fd_index] == NULL) ? -1 : cur->fd_index++;
@@ -443,10 +445,12 @@ chdir (const char *dir)
 bool 
 mkdir (const char *dir)
 {
+  if (strcmp(dir, "") == 0)  // if no directory name given
+    return false;
+
   struct dir * curr_dir = dir_open_root ();
   char *stop;
   get_last (dir, stop); // directory to make
-
 
   // search through directories
   char s[strlen(dir)];
@@ -454,18 +458,22 @@ mkdir (const char *dir)
   char * token, save_ptr;
   struct inode *cur_inode;
 
+  char s2[strlen(dir)];
+
   // go into each directory checking for validity
   for (token = strtok_r (s, "/", &save_ptr); token != NULL;
         token = strtok_r (NULL, "/", &save_ptr))
   {
     // check that the last directory doesn't already exist (we are creating it)
-    if(strcmp(token, stop) == 0) // HELP: is this a valid directory: hello/hello/hello // maybe just use a counter of the numbers of end stop things and decrement
+    if (strcmp(token, stop) == 0) // HELP: is this a valid directory: hello/hello/hello // maybe just use a counter of the numbers of end stop things and decrement
     {
       // if the directory already exists, return false
-     /* if(dir_lookup (curr_dir, token, cur_inode))
+      strlcpy(s2, stop, strlen (dir)+1); 
+
+      if (dir_lookup (curr_dir, token, cur_inode))
       {
         return false;
-      }*/ // Help: come back to this later
+      }
 
       // get an available sector
       block_sector_t sector = 0;
@@ -473,13 +481,13 @@ mkdir (const char *dir)
       dir_create (sector, 128);
 
       // curr_dir is the parent directory of the directory to make
-      dir_add (curr_dir, stop, sector);
+      dir_add (curr_dir, s2, sector);
  
       return true;
     }
 
     // make sure the directory exists
-    if(!dir_lookup (curr_dir, token, cur_inode))
+    if (!dir_lookup (curr_dir, token, cur_inode))
       return false;
 
     // go into the next directory
@@ -495,7 +503,10 @@ readdir (int fd, char *name)
   struct file * f_dir = thread_current ()->file_pointers[fd];
   
   struct dir *new_dir = calloc (1, sizeof (struct dir));
+
+
   new_dir->inode = f_dir->inode;
+
   new_dir->pos = f_dir->pos;
 
   return dir_readdir (new_dir, name);
@@ -519,20 +530,17 @@ inumber (int fd)
 
 // gets the last token in the path split by '/'
 void
-get_last (char * path, char * stop)
+get_last (char * path, char *stop)
 {
   char *token, *save_ptr;       // for spliter
   char s[strlen(path)];
   char *save_tok;
- // bool 
-  
 
   strlcpy(s, path, strlen (path)+1);  //moves path copy into s, add 1 for null
 
   for (token = strtok_r (s, "/", &save_ptr); token != NULL;
         token = strtok_r (NULL, "/", &save_ptr))
   {
-   // printf("file: %s\n\n", token);
     if(token != NULL)
     {    
       save_tok = token;
@@ -541,9 +549,7 @@ get_last (char * path, char * stop)
   char save[strlen(save_tok)];
   strlcpy (save, save_tok, strlen (save_tok)+1); 
 
-  stop = (char*) save;
-  printf("file3: %p\n", stop);
-  printf("file3: %s\n\n", stop);
+  stop = (char*) &save;
 }
 
 // return the directory corresponding to passed in dir string

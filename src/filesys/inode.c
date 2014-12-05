@@ -267,7 +267,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) //n
       block_sector_t sector_idx = byte_to_sector (inode, offset);
 
       // if the data starts beyond it
-      if(inode->data.length < offset)
+      if(inode->data.length <= offset)
         return 0;
 
       uint32_t endpoint_of_file = offset + inode->data.start;
@@ -279,11 +279,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) //n
         // help
         // do we need to do anything here or is this 
         // already handled below?
-        // kewl :)
       }
-
-
-    //  ASSERT(sector_idx);
       int sector_ofs = offset % BLOCK_SECTOR_SIZE;
 
       /* Bytes left in inode, bytes left in sector, lesser of the two. */
