@@ -132,10 +132,40 @@ filesys_open (const char *name)
    Fails if no file named NAME exists,
    or if an internal memory allocation fails. */
 bool
-filesys_remove (const char *name) 
+filesys_remove (const char *path) 
 {
-  struct dir *dir = dir_open_root ();
-  bool success = dir != NULL && dir_remove (dir, name);
+    printf("\n\n\nGOTRHOIHS\n\n\n");
+  
+  if(strcmp(path, "/")==0)
+    return false;
+
+  struct dir *dir = get_dir (path);
+
+  if(!dir->empty)
+  {
+    return false;
+  }
+
+  // getting the file to be removed
+  char *token, *save_ptr;       // for spliter
+  char s[strlen(path)];
+  char *save_tok;
+
+  strlcpy(s, path, strlen (path)+1);  //moves path copy into s, add 1 for null
+
+  for (token = strtok_r (s, "/", &save_ptr); token != NULL;
+        token = strtok_r (NULL, "/", &save_ptr))
+  {
+    if(token != NULL)
+    {    
+      save_tok = token;
+    }
+  }
+  char delete[strlen(save_tok)];
+  strlcpy (delete, save_tok, strlen (save_tok)+1); 
+
+
+  bool success = dir != NULL && dir_remove (dir, delete);
   dir_close (dir); 
 
   return success;

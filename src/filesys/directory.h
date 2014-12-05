@@ -17,6 +17,7 @@ struct inode;
 /* A directory. */
 struct dir 
   {
+    bool empty;                         /* check if directory is empty */
     struct inode *inode;                /* Backing store. */
     off_t pos;                          /* Current position. */
   };

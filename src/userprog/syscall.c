@@ -16,6 +16,8 @@
   
 static void syscall_handler (struct intr_frame *);
 
+// HELP!!!!!!!!!!!!!! Is this crit. sec to big
+
 
 bool valid_mkdir (char *dir, struct dir *dir_to_add);
 char * get_cmd_line(char * cmd_line);
@@ -355,6 +357,7 @@ write (int fd, const void *buffer, unsigned size)
     {
       sema_up (&sema_files);
       struct thread *cur = thread_current ();
+ 
 
       return file_write (cur->file_pointers[fd], buffer, size);
     }
@@ -427,16 +430,18 @@ close (int fd)
 bool 
 chdir (const char *dir)
 {
+  sema_down (&sema_files); // prevent multi-file manipulation
   struct dir *curr_dir = get_dir (dir);
   if(curr_dir->pos == -1)
   {
     free (curr_dir);
+    sema_up (&sema_files); // release file
     return false;
   }
 
   // update the current directory
   *(thread_current ()->current_dir) = *curr_dir;
-
+  sema_up (&sema_files); // release file
 
   return true;
 }
@@ -445,8 +450,13 @@ chdir (const char *dir)
 bool 
 mkdir (const char *dir)
 {
+  sema_down (&sema_files); // prevent multi-file manipulation
+
   if (strcmp(dir, "") == 0)  // if no directory name given
+  {
+    sema_up (&sema_files); // release file
     return false;
+  }
 
   struct dir * curr_dir = dir_open_root ();
   char *stop;
@@ -472,6 +482,8 @@ mkdir (const char *dir)
 
       if (dir_lookup (curr_dir, token, cur_inode))
       {
+        curr_dir->empty = false;
+        sema_up (&sema_files); // release file
         return false;
       }
 
@@ -482,17 +494,24 @@ mkdir (const char *dir)
 
       // curr_dir is the parent directory of the directory to make
       dir_add (curr_dir, s2, sector);
- 
+      curr_dir->empty = false;
+      sema_up (&sema_files); // release file
       return true;
     }
 
     // make sure the directory exists
     if (!dir_lookup (curr_dir, token, cur_inode))
+    {
+      curr_dir->empty = false;
+      sema_up (&sema_files); // release file
       return false;
+    }
 
     // go into the next directory
     curr_dir = dir_open (cur_inode);
   }
+  curr_dir->empty = false;
+  sema_up (&sema_files); // release file
   return false; // should never get here
 }
 
@@ -500,6 +519,7 @@ mkdir (const char *dir)
 bool 
 readdir (int fd, char *name)
 {
+  sema_down (&sema_files); // prevent multi-file manipulation
   struct file * f_dir = thread_current ()->file_pointers[fd];
   
   struct dir *new_dir = calloc (1, sizeof (struct dir));
@@ -508,7 +528,7 @@ readdir (int fd, char *name)
   new_dir->inode = f_dir->inode;
 
   new_dir->pos = f_dir->pos;
-
+  sema_up (&sema_files); // release file
   return dir_readdir (new_dir, name);
 }
 
