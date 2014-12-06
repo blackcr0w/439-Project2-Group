@@ -16,7 +16,7 @@
   
 static void syscall_handler (struct intr_frame *);
 
-// HELP!!!!!!!!!!!!!! Is this crit. sec to big
+// HELP!!!!!!!!!!!!!! Is this crit. sec too big?
 
 bool valid_mkdir (char *dir, struct dir *dir_to_add);
 char * get_cmd_line(char * cmd_line);
@@ -243,7 +243,6 @@ wait (pid_t pid)
 bool 
 create (const char *file, unsigned initial_size)
 {
-
   sema_down (&sema_files); // prevent multi-file manipulation
   bool res = filesys_create (file, initial_size);  // save result
   sema_up (&sema_files);   // release file
@@ -440,7 +439,18 @@ bool
 chdir (const char *dir)
 {
   sema_down (&sema_files); // prevent multi-file manipulation
+   struct inode *cur_inode = calloc (1, sizeof (struct inode)); 
+  
+
+  // printf("\ngot to chdir of %d\n\n", thread_current()->current_dir->inode->sector);
+  // if(dir_lookup(thread_current()->current_dir, dir, cur_inode))
+    // printf("\n\n\nIN ROOT %d\n\n\n",cur_inode->sector);
+
+
+ 
+
   struct dir *curr_dir = get_dir (dir);
+  // printf("\n\n\ndir osahdosa: %s sector: %d\n\n\n", dir, curr_dir->inode->sector);
   if(curr_dir->pos == -1)
   {
     free (curr_dir);
@@ -448,11 +458,19 @@ chdir (const char *dir)
     return false;
   }
 
+
+
+
+  // printf("\n\nbefore: %d curr_dir: %d\n\n", thread_current ()->current_dir->inode->sector, curr_dir->inode->sector);
   // update the current directory
   *(thread_current ()->current_dir) = *curr_dir;
+  // printf("\n\nafter: %d\n\n", thread_current ()->current_dir->inode->sector);
+  // printf("\n\n\nioihsd: %d\n\n\n", thread_current ()->current_dir->inode->sector);
   sema_up (&sema_files); // release file
 
   return true;
+
+
 }
 
 /* Create a directory. */
@@ -501,6 +519,11 @@ mkdir (const char *dir)
       block_sector_t sector = 0;
       free_map_allocate (1, &sector);
       dir_create (sector, 128);
+      // printf("\n\n\ndirectory %s has sector: %d\n\n\n", dir, sector);
+
+      // printf("\n\ndir: %s sector: %d\n\n", dir, sector);
+      // printf("\n\ns2: %s sector: %d\n\n", s2, sector);
+
 
       // curr_dir is the parent directory of the directory to make
       dir_add (curr_dir, s2, sector);
@@ -518,6 +541,7 @@ mkdir (const char *dir)
     } 
 
     // go into the next directory
+    // printf("\n\n\niusaguiagia \n\n\n");
     curr_dir = dir_open (cur_inode);
   }
   curr_dir->empty = false;
@@ -597,12 +621,19 @@ get_dir (char *dir)
   // bad dir to return later
   struct dir *bad_dir = calloc (1, sizeof (struct dir));
   bad_dir->pos = -1;
+  bad_dir->dir_name = "THIS IS A BAD DIR";
+
   // copy dir into s (to preserve it) and make sure copy was successful
   if(strlcpy (s, dir, strlen (dir)+1) != strlen (dir))
     return bad_dir;
 
   if(dir[0] == '/') // absolute, start at the top (root)
+  {
     curr_dir = dir_open_root ();
+    // printf ("\n\n\ncalling get_dir on root which has sector: %d\n\n\n", 
+                                      // curr_dir->inode->sector);
+  }
+  // printf("\n\n\ncur dir: %d\n\n\n", save_dir->inode->sector);
 
   // if relative, keep curr_dir where it is and go from there
 
@@ -611,12 +642,14 @@ get_dir (char *dir)
   for (token = strtok_r (s, "/", &save_ptr); token != NULL;
         token = strtok_r (NULL, "/", &save_ptr))
   {    
-    //printf("\ntoken: %s", token);
+
+    // printf ("\n\n\ncalling get_dir on %s and curr_dir has sector: %d\n\n\n", 
+    //                                   dir, curr_dir->inode->sector);
+
     if(!dir_lookup (curr_dir, token, cur_inode)) // make sure directory exists
     {
-     // printf("\nmkdir %s\n\n", curr_dir);
+      // printf("\n\nGOT HERE\n\n");
       return bad_dir;
-      
     }
 
     curr_dir = dir_open (cur_inode); // HELP: need to close each thing opened because malloc (might run out of memory). One idea is a global list of opened stuff.

@@ -20,6 +20,7 @@ struct dir
     bool empty;                         /* check if directory is empty */
     struct inode *inode;                /* Backing store. */
     off_t pos;                          /* Current position. */
+    char *dir_name;                     // name of directory for debugging purposes
   };
 
 /* A single directory entry. */

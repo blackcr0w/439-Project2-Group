@@ -133,14 +133,23 @@ filesys_open (const char *name)
 bool
 filesys_remove (const char *path) 
 {
-  
+
+  if(path=="")
+    return false;
+
+  // printf("\n\n\ngot to filesys_remove\n\n\n"); 
   if(strcmp(path, "/")==0)
     return false;
 
   struct dir *dir = get_dir (path);
+  //printf("\n\n\nfilesys_remove dir dir_name %s\n\n\n", dir->dir_name);
+
+  // if(dir->inode == dir_open_root ()->inode) // help: not equal to the root, should be able to just use dir
+    // printf("\n\ndir is the root\n\n\n\n");
 
   if(!dir->empty)
   {
+    // printf("\n\n\n\ndirectory is not empty, cannot remove\n\n\n\n\n");
     return false;
   }
 
@@ -154,7 +163,7 @@ filesys_remove (const char *path)
   for (token = strtok_r (s, "/", &save_ptr); token != NULL;
         token = strtok_r (NULL, "/", &save_ptr))
   {
-    if(token != NULL)
+    if(token != NULL) 
     {    
       save_tok = token;
     }
@@ -163,8 +172,6 @@ filesys_remove (const char *path)
   strlcpy (delete, save_tok, strlen (save_tok)+1); 
 
 
-  // if(dir->inode == dir_open_root ()->inode) // help: not equal to the root, should be able to just use dir
-    // printf("\n\ndir is the root\n\n\n\n");
 
   bool success = dir != NULL && dir_remove (dir_open_root (), delete);
   dir_close (dir); 

@@ -11,7 +11,8 @@
 bool
 dir_create (block_sector_t sector, size_t entry_cnt)
 {
-  bool success = inode_create (sector, 25 * sizeof (struct dir_entry));
+  //printf("\n\n\ndir create gets sector: %d\n\n\n", sector);
+  bool success = inode_create (sector, entry_cnt * sizeof (struct dir_entry)); // help: should be entry_cnt
  // printf("\nentrysize: %d\n\n", entry_cnt);
   struct dir *first_dir = dir_open (inode_open (sector));
   first_dir->inode->is_dir = -1;
@@ -87,6 +88,14 @@ static bool
 lookup (const struct dir *dir, const char *name,
         struct dir_entry *ep, off_t *ofsp) 
 {
+  // printf("\n\n\ngot to lookup of %s\n", name);
+
+  // if(dir->inode == dir_open_root ()->inode)
+  //   printf("uh oh this is the root\n\n\n");
+  // else
+  //   printf("this is not the root\n\n\n");
+
+
   struct dir_entry e;
   size_t ofs;
   
@@ -116,10 +125,16 @@ bool
 dir_lookup (const struct dir *dir, const char *name,
             struct inode **inode) 
 {
+  // printf("dir_lookup dir_name: %s\n\n\n", dir->dir_name);
   struct dir_entry e;
 
   ASSERT (dir != NULL);
   ASSERT (name != NULL);
+
+  // printf("\n\n\nname from dir_lookup: %s\n", name);
+
+  // if(dir->inode == dir_open_root ()->inode)
+    // printf("uh oh this is the root\n\n\n");
 
   if (lookup (dir, name, &e, NULL))
   {
@@ -170,7 +185,7 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   {
    // printf("\noffset is: %d\n\n", ofs);
     if (!e.in_use)
-      break;
+      break; 
   }
     
 
@@ -179,6 +194,16 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   strlcpy (e.name, name, sizeof e.name);
   e.inode_sector = inode_sector;
   success = inode_write_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
+
+  // for debugging purposes give the directory a name
+  struct inode *in;
+  dir_lookup (dir, name, in);
+
+  struct dir *dir_added = dir_open (in); // the dir that was just added
+  dir_added->dir_name = name;
+
+
+  // printf("\n\nname: %s\ndir name: %s\n\n\n", name, dir_added->dir_name);
 
   done:
   return success;

@@ -12,6 +12,6 @@ test_main (void)
   CHECK (chdir ("a"), "chdir \"a\"");
   CHECK (mkdir ("b"), "mkdir \"b\"");
   CHECK (chdir ("b"), "chdir \"b\"");
-    printf("\n\n\nGOTRHOIHS\n\n\n");
+    // printf("\n\n\nGOTRHOIHS\n\n\n");
   CHECK (!remove ("/a"), "remove \"/a\" (must fail)");
 }

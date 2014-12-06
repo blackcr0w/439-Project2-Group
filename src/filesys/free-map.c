@@ -41,6 +41,7 @@ free_map_allocate (size_t cnt, block_sector_t *sectorp)
   {
     *sectorp = sector;
   }
+  // printf("\n\nsector being given: %d\n\n\n\n", *sectorp);
   return sector != BITMAP_ERROR;
 }
 
